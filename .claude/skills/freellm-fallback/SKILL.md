@@ -23,7 +23,7 @@ pero con el router gratuito como backend. Los modelos gratis son menos capaces q
 4. `export FREELLMAPI_API_KEY=<unified key de la página Keys>` (ponerlo en ~/.bashrc o ~/.zshrc).
 
 ## Cuando se acabe el límite de Claude
-`scripts/claude-free` → retoma la última sesión del directorio con el router.
+`scripts/claude-free` (usa ANTHROPIC_BASE_URL/AUTH_TOKEN del router y modelo `auto`) → retoma la última sesión del directorio con el router.
 Para elegir sesión: `scripts/claude-free --resume`. Para volver a Claude, abrir `claude` normal.
 
 ## Verificación
