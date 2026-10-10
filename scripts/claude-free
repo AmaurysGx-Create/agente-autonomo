@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# Continúa tu última conversación de Claude Code usando el router gratuito como modelo de respaldo.
+# Uso: scripts/claude-free            (retoma la última sesión de este directorio)
+#      scripts/claude-free --resume   (elige una sesión)
+# Requiere: FREELLMAPI_API_KEY (unified key del dashboard) y router corriendo.
+set -euo pipefail
+: "${FREELLMAPI_API_KEY:?Define FREELLMAPI_API_KEY con la unified key del dashboard (http://localhost:3001 → Keys)}"
+"$(dirname "$0")/freellm-start.sh" >/dev/null
+ARGS=("$@"); [ ${#ARGS[@]} -eq 0 ] && ARGS=(--continue)
+exec npx freellmapi launch --url http://localhost:3001 --api-key "$FREELLMAPI_API_KEY" -- "${ARGS[@]}"
