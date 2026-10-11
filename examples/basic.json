@@ -1,0 +1,25 @@
+{
+  "macros": [
+    {
+      "name": "autoclick_10cps",
+      "description": "Clic izquierdo repetido mientras se mantiene F6",
+      "trigger": "f6", "mode": "hold", "loop": true,
+      "steps": [{"type": "click", "button": "left", "hold_ms": 15, "ms": 85}]
+    },
+    {
+      "name": "saludo",
+      "description": "Escribe un texto al pulsar F7",
+      "trigger": "f7", "mode": "once",
+      "steps": [{"type": "text", "value": "hola desde MacroLab"}]
+    },
+    {
+      "name": "tap_secuencia",
+      "description": "Alterna A/D en bucle (toggle con F8) para probar temporización",
+      "trigger": "f8", "mode": "toggle", "loop": true,
+      "steps": [
+        {"type": "tap", "key": "a", "hold_ms": 50, "ms": 100},
+        {"type": "tap", "key": "d", "hold_ms": 50, "ms": 100}
+      ]
+    }
+  ]
+}
