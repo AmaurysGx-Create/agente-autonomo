@@ -77,3 +77,9 @@ los marca el antivirus como falso positivo: añade la carpeta de instalación a 
 Botón **🌙 Modo oscuro / ☀ Modo claro** en la barra inferior de la GUI. La elección se guarda en
 `%APPDATA%\GxKeybinds\settings.json` (en Linux `~/.config/gx_keybinds/`); la primera vez sigue el
 tema de aplicaciones de Windows.
+
+## Atajos globales en la GUI
+Casilla **Atajos globales** (barra inferior): las teclas de activación de las macros funcionan aunque
+la ventana no tenga el foco, según el modo (`toggle`, `hold`, `once`). **F12 = pánico**: detiene
+todas las macros y desactiva los atajos. Usan la lista/perfil que estés viendo, se pausan mientras
+grabas y avisan si dos macros comparten la misma tecla. Empieza en modo simulación (dry-run).

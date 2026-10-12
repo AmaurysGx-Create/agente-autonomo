@@ -101,7 +101,64 @@ def main() -> None:
     status = tk.StringVar(value="")
     rec_btn = None
 
+    class _CurrentManager:
+        """Delegado: los atajos globales siempre usan el Manager actual (cambia al editar/perfil)."""
+        def _m(self): return state["mgr"]
+        def lookup(self, t): m = self._m(); return m.lookup(t) if m else None
+        def press(self, n):
+            m = self._m()
+            if m and n in m.runners: m.press(n)
+        def release(self, n):
+            m = self._m()
+            if m and n in m.runners: m.release(n)
+        def stop_all(self):
+            m = self._m()
+            if m: m.stop_all()
+
+    hotkeys_var = tk.BooleanVar(value=False)
+    hk: dict = {"hl": None}
+
+    def hotkeys_stop():
+        if hk["hl"]:
+            hk["hl"].stop()
+            hk["hl"] = None
+
+    def hotkeys_start() -> bool:
+        if hk["hl"]:
+            return True
+        dups = state["mgr"].duplicate_triggers() if state["mgr"] else []
+        if dups:
+            messagebox.showwarning("Teclas repetidas",
+                                   "Estas teclas están asignadas a varias macros: " + ", ".join(dups))
+        try:
+            from .hotkeys import HotkeyListener
+            hl = HotkeyListener(_CurrentManager(), panic="f12",
+                                on_panic=lambda: root.after(0, panic_ui))
+            hl.start()
+        except Exception as e:  # sin entorno gráfico / sin pynput
+            messagebox.showerror("Atajos globales", str(e))
+            return False
+        hk["hl"] = hl
+        return True
+
+    def panic_ui():
+        hotkeys_var.set(False)
+        status.set("PÁNICO (F12): macros detenidas y atajos globales desactivados.")
+        hotkeys_stop()
+
+    def on_hotkeys_toggle():
+        if hotkeys_var.get():
+            if hotkeys_start():
+                status.set("Atajos globales activos. F12 = pánico (detiene todo).")
+            else:
+                hotkeys_var.set(False)
+        else:
+            hotkeys_stop()
+            status.set("Atajos globales desactivados.")
+
     def refresh():
+        if state["mgr"]:
+            state["mgr"].stop_all()   # no dejar macros huérfanas al reconstruir
         tree.delete(*tree.get_children())
         for m in state["macros"]:
             tree.insert("", "end", iid=m.name, text=m.name,
@@ -117,6 +174,8 @@ def main() -> None:
         rec_state["lr"] = None
         rec_btn.config(text="● Grabar")
         status.set("")
+        if rec_state.pop("resume_hotkeys", False):
+            hotkeys_var.set(hotkeys_start())
         if not lr.rec.events:
             messagebox.showinfo("Grabación", "No se grabó ningún evento.")
             return
@@ -139,6 +198,9 @@ def main() -> None:
             finish_recording()
             return
         stop_all()
+        if hk["hl"]:   # F12 y las teclas grabadas no deben disparar macros durante la grabación
+            hotkeys_stop()
+            rec_state["resume_hotkeys"] = True
         try:
             from .recorder import LiveRecorder
             # F12 también detiene; el callback llega desde otro hilo -> root.after
@@ -147,6 +209,8 @@ def main() -> None:
             lr.start()
         except Exception as e:  # sin entorno gráfico / sin pynput
             messagebox.showerror("No se puede grabar", str(e))
+            if rec_state.pop("resume_hotkeys", False):
+                hotkeys_var.set(hotkeys_start())
             return
         rec_state["lr"] = lr
         rec_btn.config(text="■ Detener")
@@ -204,6 +268,8 @@ def main() -> None:
     moves = tk.BooleanVar(value=False)
     ttk.Checkbutton(bar, text="Grabar movimiento", variable=moves).pack(side="left", padx=8)
     ttk.Checkbutton(bar, text="Simulación (dry-run)", variable=dry).pack(side="right")
+    ttk.Checkbutton(bar, text="Atajos globales", variable=hotkeys_var,
+                    command=on_hotkeys_toggle).pack(side="right", padx=8)
 
     def toggle_dark():
         dark_var.set(not dark_var.get())
@@ -219,6 +285,7 @@ def main() -> None:
     theme_btn.pack(side="right", padx=8)
     ttk.Label(root, textvariable=status).pack(fill="x", padx=8, pady=(0, 6))
     def on_close():
+        hotkeys_stop()
         stop_all()
         if rec_state["lr"] is not None:
             rec_state["lr"].stop()

@@ -86,3 +86,9 @@ def test_mouse_released_on_stop_and_moveto():
     r = Runner(Macro("m", [Step("moveto", dx=10, dy=20), Step("down", key="mouse_left"), Step("wait", ms=5000)]), b)
     r.start(); time.sleep(0.05); r.stop()
     assert b.events[0] == ("mouse_moveto", 10, 20) and b.events[-1] == ("mouse_up", "left")
+
+
+def test_duplicate_triggers_detected():
+    m = Manager([Macro("a", trigger="F6"), Macro("b", trigger="f6"), Macro("c", trigger="f7")],
+                DryRunBackend())
+    assert m.duplicate_triggers() == ["<f6>"]

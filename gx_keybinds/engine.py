@@ -122,6 +122,15 @@ class Manager:
         self.runners = {m.name: Runner(m, backend) for m in macros}
         self._by_trigger = {norm_key(m.trigger): m.name for m in macros if m.trigger}
 
+    def duplicate_triggers(self) -> list[str]:
+        """Teclas asignadas a más de una macro (solo funcionaría la última)."""
+        seen: dict[str, int] = {}
+        for r in self.runners.values():
+            if r.macro.trigger:
+                k = norm_key(r.macro.trigger)
+                seen[k] = seen.get(k, 0) + 1
+        return sorted(k for k, n in seen.items() if n > 1)
+
     def lookup(self, trigger: str) -> str | None:
         """Nombre de la macro asociada a una tecla (ya normalizada), si hay."""
         return self._by_trigger.get(trigger)
