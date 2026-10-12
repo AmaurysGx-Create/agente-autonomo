@@ -64,6 +64,10 @@ def apply_theme(root, dark: bool) -> Palette:
     style.map("TButton", background=[("active", p.button_active), ("pressed", p.button_active)])
     style.configure("TCheckbutton", background=p.bg, foreground=p.fg)
     style.map("TCheckbutton", background=[("active", p.bg)], foreground=[("disabled", p.muted)])
+    style.configure("TLabelframe", background=p.bg, bordercolor=p.border)
+    style.configure("TLabelframe.Label", background=p.bg, foreground=p.fg)
+    style.configure("TRadiobutton", background=p.bg, foreground=p.fg)
+    style.map("TRadiobutton", background=[("active", p.bg)], foreground=[("disabled", p.muted)])
     style.configure("TEntry", fieldbackground=p.surface, foreground=p.fg, insertcolor=p.fg)
     style.configure("TCombobox", fieldbackground=p.surface, background=p.button, foreground=p.fg,
                     arrowcolor=p.fg, selectbackground=p.surface, selectforeground=p.fg)

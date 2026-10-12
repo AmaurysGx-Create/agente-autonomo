@@ -100,3 +100,10 @@ No incluye el teclado numérico todavía.
   se reproduce y se importa desde `.amc` distinguiéndolo de la fila de números.
 - **Velocidad ×** (campo `speed`, 0.1–10) en el editor: 0.5 = cámara lenta para estudiar una secuencia.
 - **▶ Probar (simulación)**: ejecuta la macro una vez sin enviar nada y muestra cada evento con su tiempo en ms.
+
+## Respuesta e input lag (columna derecha de la GUI, solo Windows)
+Interruptores de encendido/apagado, todos reversibles («Apagar todos» restaura lo que tenías):
+**Repetición de teclas al máximo** (retardo 250 ms, ~30/s), **Ratón sin aceleración**,
+**Temporizador de 1 ms** (macros más precisas mientras la app esté abierta) y **Plan de energía de alto
+rendimiento**. Importante: la repetición solo afecta a teclas *mantenidas*; la latencia real de un juego
+depende sobre todo del monitor, los FPS, el USB y los ajustes del juego.

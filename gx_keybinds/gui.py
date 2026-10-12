@@ -36,11 +36,47 @@ def main() -> None:
     profile_cb.bind("<<ComboboxSelected>>", lambda e: use_profile(profile_var.get()))
     ttk.Checkbutton(pbar, text="Automático (ventana activa)", variable=auto_var).pack(side="left")
 
-    tree = ttk.Treeview(root, columns=("trigger", "mode", "loop", "steps"), show="headings", height=10)
+    body = ttk.Frame(root)
+    body.pack(fill="both", expand=True)
+    tree = ttk.Treeview(body, columns=("trigger", "mode", "loop", "steps"), show="headings", height=10)
     for c, w in (("trigger", 90), ("mode", 70), ("loop", 60), ("steps", 60)):
         tree.heading(c, text=c)
         tree.column(c, width=w)
-    tree.pack(fill="both", expand=True, padx=8, pady=8)
+    tree.pack(side="left", fill="both", expand=True, padx=8, pady=8)
+
+    # --- Columna «Respuesta e input lag»: interruptores de ajustes de Windows (reversibles) ---
+    from .system_tweaks import TweakError, make_manager
+    tweaks = make_manager(settings, lambda: save_settings(settings))
+    side = ttk.LabelFrame(body, text="Respuesta e input lag", padding=8)
+    side.pack(side="right", fill="y", padx=(0, 8), pady=8)
+    tweak_vars: dict = {}
+    if tweaks is None:
+        ttk.Label(side, text="Disponible solo en Windows.", wraplength=190).pack()
+    else:
+        def on_tweak(tid):
+            try:
+                tweak_vars[tid].set(tweaks.set(tid, tweak_vars[tid].get()))
+            except (TweakError, OSError) as e:
+                tweak_vars[tid].set(tweaks.get(tid).is_on())
+                messagebox.showerror("Ajuste de Windows", str(e))
+        for t in tweaks.tweaks:
+            try:
+                on = t.is_on()
+            except (TweakError, OSError):
+                on = False
+            tweak_vars[t.id] = tk.BooleanVar(value=on)
+            ttk.Checkbutton(side, text=f"{t.label}", variable=tweak_vars[t.id],
+                            command=lambda i=t.id: on_tweak(i)).pack(anchor="w", pady=(6, 0))
+            ttk.Label(side, text=t.description, wraplength=190).pack(anchor="w", padx=(20, 0))
+
+        def restore_tweaks():
+            try:
+                tweaks.restore_all()
+            except (TweakError, OSError) as e:
+                messagebox.showerror("Ajuste de Windows", str(e))
+            for t in tweaks.tweaks:
+                tweak_vars[t.id].set(t.is_on())
+        ttk.Button(side, text="Apagar todos", command=restore_tweaks).pack(fill="x", pady=(12, 0))
 
     def make_backend():
         if dry.get():
@@ -285,6 +321,8 @@ def main() -> None:
     theme_btn.pack(side="right", padx=8)
     ttk.Label(root, textvariable=status).pack(fill="x", padx=8, pady=(0, 6))
     def on_close():
+        if tweaks is not None and tweaks.api.timer_active:
+            tweaks.api.timer_end()    # el temporizador de 1 ms solo vale mientras la app está abierta
         hotkeys_stop()
         stop_all()
         if rec_state["lr"] is not None:
