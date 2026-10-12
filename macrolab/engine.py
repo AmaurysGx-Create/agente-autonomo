@@ -66,7 +66,13 @@ class Runner:
 
     def _exec(self, s: Step) -> None:
         b = self.backend
-        if s.type == "down":
+        if s.type in ("down", "up") and s.key.startswith("mouse_"):
+            btn = s.key[len("mouse_"):]  # lo que graba el recorder
+            if s.type == "down":
+                b.mouse_down(btn); self._held_buttons.add(btn)
+            else:
+                b.mouse_up(btn); self._held_buttons.discard(btn)
+        elif s.type == "down":
             b.key_down(s.key); self._held_keys.add(s.key)
         elif s.type == "up":
             b.key_up(s.key); self._held_keys.discard(s.key)

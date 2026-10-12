@@ -46,3 +46,24 @@ def test_validation_and_roundtrip(tmp_path):
     ms = load_macros("examples/basic.json")
     save_macros(p, ms)
     assert [m.to_dict() for m in load_macros(p)] == [m.to_dict() for m in ms]
+
+
+def test_recorder_builds_steps_with_waits():
+    from macrolab.recorder import Recorder
+    r = Recorder(record_moves=True)
+    r.add("key_down", "a", t=0.0)
+    r.add("key_up", "a", t=0.05)
+    r.add("move", 3, 1, t=0.10)
+    r.add("move", 2, 2, t=0.10)
+    r.add("mouse_down", "left", t=0.30)
+    m = r.to_macro("rec")
+    assert [(s.type, s.key) for s in m.steps if s.type in ("down", "up")] == \
+        [("down", "a"), ("up", "a"), ("down", "mouse_left")]
+    assert any(s.type == "move" and (s.dx, s.dy) == (5, 3) for s in m.steps)
+    assert any(s.type == "wait" and s.ms == 200.0 for s in m.steps)
+
+
+def test_recorded_mouse_buttons_replay_as_mouse_events():
+    b = DryRunBackend()
+    Runner(Macro("m", [Step("down", key="mouse_left"), Step("up", key="mouse_left")]), b).run()
+    assert b.events == [("mouse_down", "left"), ("mouse_up", "left")]

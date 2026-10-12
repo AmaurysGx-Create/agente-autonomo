@@ -20,11 +20,28 @@ def main(argv: list[str] | None = None) -> int:
             sp.add_argument("--panic", default="f12", help="tecla que detiene todo")
             sp.add_argument("--now", metavar="NAME", help="ejecuta una macro ya (sin hotkey)")
     sub.add_parser("gui")
+    rp = sub.add_parser("record", help="graba una macro en vivo")
+    rp.add_argument("name")
+    rp.add_argument("-o", "--output", required=True, help="archivo .json de salida")
+    rp.add_argument("--stop", default="f12", help="tecla para terminar la grabación")
+    rp.add_argument("--moves", action="store_true", help="grabar también movimiento del ratón")
+    rp.add_argument("--trigger", help="tecla de activación a guardar, p. ej. f6")
+    rp.add_argument("--mode", default="once", choices=["toggle", "hold", "once"])
     a = p.parse_args(argv)
 
     if a.cmd == "gui":
         from .gui import main as gui_main
         gui_main()
+        return 0
+
+    if a.cmd == "record":
+        from .recorder import record_live
+        from .model import save_macros
+        print(f"Grabando '{a.name}'... pulsa {a.stop} para terminar.")
+        m = record_live(a.name, stop_key=a.stop, record_moves=a.moves)
+        m.trigger, m.mode = a.trigger, a.mode
+        save_macros(a.output, [m])
+        print(f"Guardada: {len(m.steps)} pasos -> {a.output}")
         return 0
 
     try:
