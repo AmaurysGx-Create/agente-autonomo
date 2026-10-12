@@ -56,3 +56,17 @@ Cada perfil tiene `process` (ej. `notepad.exe`) y/o `title_contains`; un perfil 
 teclas: `{"Mantle Jump macro": "f6"}`. Al cambiar de ventana se detienen las macros del perfil anterior.
 En Windows la detección de ventana es nativa; en Linux requiere `xdotool`; macOS aún no.
 En la GUI, abrir un archivo de perfiles muestra un selector de perfil y la casilla «Automático».
+
+## Instalador para Windows
+Necesitas Python 3.10+ y, para el instalador, [Inno Setup 6](https://jrsoftware.org/isinfo.php).
+```
+packaging\build_windows.bat
+```
+Genera `dist\GxKeybinds\GxKeybinds.exe` (PyInstaller, sin consola) y, si Inno Setup está instalado,
+`dist\GxKeybinds-Setup-<versión>.exe`: instalación por usuario (sin administrador), acceso en el menú
+Inicio, icono opcional en el escritorio y desinstalador. También se construye en GitHub Actions
+(`.github/workflows/windows-installer.yml`, manual o al subir un tag `v*`; el instalador queda como artefacto).
+
+Notas: un programa que envía teclas/ratón no puede controlar ventanas ejecutadas como administrador
+salvo que Gx Keybinds también se ejecute como administrador. Los ejecutables de PyInstaller a veces
+los marca el antivirus como falso positivo: añade la carpeta de instalación a las exclusiones si pasa.

@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "gx-keybinds"
+dynamic = ["version"]
+description = "Motor de macros personal (teclado/ratón) con grabación, editor visual y perfiles por programa"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = ["pynput>=1.7"]
+
+[project.scripts]
+gxkeybinds = "gx_keybinds.cli:main"
+
+[project.gui-scripts]
+gxkeybinds-gui = "gx_keybinds.gui:main"
+
+[tool.setuptools]
+packages = ["gx_keybinds"]
+
+[tool.setuptools.dynamic]
+version = { attr = "gx_keybinds.__version__" }
