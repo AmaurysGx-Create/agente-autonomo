@@ -34,12 +34,23 @@ _NAV: list[tuple[str, str, float, float]] = [   # (etiqueta, tecla, x, y) en tec
 # Fila de ratón bajo el teclado: (etiqueta, id, ancho)
 MOUSE_KEYS = [("Clic izq.", "mouse_left", 2), ("Clic medio", "mouse_middle", 2), ("Clic der.", "mouse_right", 2),
               ("Rueda ▲", "wheel_up", 2), ("Rueda ▼", "wheel_down", 2)]
+_NUM_X = _NAV_X + 3.5
+_NUMPAD: list[tuple[str, str, float, float, float, float]] = [   # (etiqueta, tecla, x, y, ancho, alto)
+    ("Bloq N", "num_lock", _NUM_X, 1.5, 1, 1), ("/", "num_divide", _NUM_X + 1, 1.5, 1, 1),
+    ("*", "num_multiply", _NUM_X + 2, 1.5, 1, 1), ("-", "num_subtract", _NUM_X + 3, 1.5, 1, 1),
+    ("7", "num7", _NUM_X, 2.5, 1, 1), ("8", "num8", _NUM_X + 1, 2.5, 1, 1), ("9", "num9", _NUM_X + 2, 2.5, 1, 1),
+    ("+", "num_add", _NUM_X + 3, 2.5, 1, 2),
+    ("4", "num4", _NUM_X, 3.5, 1, 1), ("5", "num5", _NUM_X + 1, 3.5, 1, 1), ("6", "num6", _NUM_X + 2, 3.5, 1, 1),
+    ("1", "num1", _NUM_X, 4.5, 1, 1), ("2", "num2", _NUM_X + 1, 4.5, 1, 1), ("3", "num3", _NUM_X + 2, 4.5, 1, 1),
+    ("Intro", "num_enter", _NUM_X + 3, 4.5, 1, 2),
+    ("0", "num0", _NUM_X, 5.5, 2, 1), (".", "num_decimal", _NUM_X + 2, 5.5, 1, 1),
+]
 MOUSE_ROW_Y = 7.0
-WIDTH_KEYS = 18.5
+WIDTH_KEYS = 23.0
 HEIGHT_KEYS = 8.0
 
 
-def _items() -> list[tuple[str, str, float, float, float]]:
+def _items() -> list[tuple[str, str, float, float, float, float]]:
     out = []
     for r, row in enumerate(_MAIN_ROWS):
         x, y = 0.0, r + (0.5 if r else 0)   # separación entre la fila de F y el resto
@@ -48,20 +59,21 @@ def _items() -> list[tuple[str, str, float, float, float]]:
                 x += it
                 continue
             label, key, w = it
-            out.append((label, key, x, y, w))
+            out.append((label, key, x, y, w, 1.0))
             x += w
-    out += [(l, k, x, y, 1.0) for l, k, x, y in _NAV]
+    out += [(l, k, x, y, 1.0, 1.0) for l, k, x, y in _NAV]
+    out += _NUMPAD
     x = 0.0
     for label, key, w in MOUSE_KEYS:
-        out.append((label, key, x, MOUSE_ROW_Y, w))
+        out.append((label, key, x, MOUSE_ROW_Y, w, 1.0))
         x += w
     return out
 
 
 def key_rects(unit: int = 36, gap: int = 3) -> list[tuple[str, str, int, int, int, int]]:
     """[(etiqueta, tecla, x, y, ancho, alto)] en píxeles."""
-    return [(label, key, round(x * unit), round(y * unit), round(w * unit) - gap, unit - gap)
-            for label, key, x, y, w in _items()]
+    return [(label, key, round(x * unit), round(y * unit), round(w * unit) - gap, round(h * unit) - gap)
+            for label, key, x, y, w, h in _items()]
 
 
 def all_keys() -> list[str]:

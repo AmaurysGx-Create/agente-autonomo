@@ -5,6 +5,7 @@ import threading
 from typing import Callable
 
 from .engine import norm_key as _norm
+from .keynames import name_from_pynput
 
 
 class HotkeyListener:
@@ -31,9 +32,8 @@ class HotkeyListener:
             return
 
         def canon(key) -> str:
-            if isinstance(key, keyboard.KeyCode) and key.char:
-                return key.char.lower()
-            return f"<{getattr(key, 'name', str(key))}>"
+            n = name_from_pynput(key)
+            return n if len(n) == 1 else f"<{n}>"
 
         def on_press(key):
             c = canon(key)

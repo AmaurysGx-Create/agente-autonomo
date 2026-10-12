@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import time
 
+from .keynames import name_from_pynput
 from .model import Macro, Step
 
 
@@ -77,10 +78,7 @@ class LiveRecorder:
         from pynput import keyboard, mouse
         rec, stop = self.rec, self.stop_key
 
-        def kname(key) -> str:
-            if isinstance(key, keyboard.KeyCode) and key.char:
-                return key.char.lower()
-            return getattr(key, "name", str(key))
+        kname = name_from_pynput
 
         def on_press(key):
             n = kname(key)

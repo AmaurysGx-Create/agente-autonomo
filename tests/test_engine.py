@@ -92,3 +92,15 @@ def test_duplicate_triggers_detected():
     m = Manager([Macro("a", trigger="F6"), Macro("b", trigger="f6"), Macro("c", trigger="f7")],
                 DryRunBackend())
     assert m.duplicate_triggers() == ["<f6>"]
+
+
+def test_speed_scales_waits_and_validates():
+    import time
+    b = DryRunBackend()
+    m = Macro("m", [Step("wait", ms=200), Step("down", key="a")], speed=4.0)
+    t = time.perf_counter(); Runner(m, b).run(); dt = time.perf_counter() - t
+    assert dt < 0.15 and b.events == [("key_down", "a"), ("key_up", "a")]
+    for bad in (0.01, 50):
+        with pytest.raises(MacroError):
+            Macro("x", speed=bad).validate()
+    assert Macro.from_dict(m.to_dict()).speed == 4.0

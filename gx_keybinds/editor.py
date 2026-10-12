@@ -91,6 +91,9 @@ class MacroEditor(tk.Toplevel):
                      state="readonly", width=7).grid(row=0, column=5, padx=(4, 10))
         ttk.Label(props, text="Repeticiones (1, N o inf)").grid(row=0, column=6)
         ttk.Entry(props, textvariable=self.v_loop, width=6).grid(row=0, column=7, padx=4)
+        self.v_speed = tk.StringVar(value=f"{macro.speed:g}")
+        ttk.Label(props, text="Velocidad ×").grid(row=0, column=8, padx=(10, 0))
+        ttk.Entry(props, textvariable=self.v_speed, width=5).grid(row=0, column=9, padx=4)
 
         body = ttk.Frame(self, padding=8)
         body.pack(fill="both", expand=True)
@@ -113,7 +116,8 @@ class MacroEditor(tk.Toplevel):
                           ("Duplicar", self.duplicate_steps), ("Eliminar", self.delete_steps),
                           ("▲ Subir", lambda: self.move(-1)), ("▼ Bajar", lambda: self.move(1)),
                           ("Bucle desde aquí", self.set_loop_from),
-                          ("Deshacer", self.undo), ("Rehacer", self.redo)):
+                          ("Deshacer", self.undo), ("Rehacer", self.redo),
+                          ("▶ Probar (simulación)", self.test_run)):
             ttk.Button(side, text=text, command=cmd).pack(fill="x", pady=2)
 
         kb_box = ttk.LabelFrame(self, text="Teclado en pantalla: clic en una tecla para añadir un paso", padding=6)
@@ -135,7 +139,7 @@ class MacroEditor(tk.Toplevel):
         ttk.Button(foot, text="Cancelar", command=self.destroy).pack(side="right")
         ttk.Button(foot, text="Guardar cambios", command=self.save).pack(side="right", padx=6)
         self._snapshot = [Step(**s.__dict__) for s in macro.steps]
-        self._orig = (macro.name, macro.trigger, macro.mode, macro.loop, macro.loop_from)
+        self._orig = (macro.name, macro.trigger, macro.mode, macro.loop, macro.loop_from, macro.speed)
         self.refresh()
         self.grab_set()
         self.wait_window()
@@ -200,6 +204,44 @@ class MacroEditor(tk.Toplevel):
         self.ed.set_loop_from(sel[0] if sel else 0)
         self.refresh(sel)
 
+    def test_run(self) -> None:
+        """Ejecuta la macro UNA vez en simulación (no envía nada) y muestra eventos con su tiempo."""
+        import copy
+        import threading
+        from .backends import DryRunBackend
+        from .engine import Runner
+        try:
+            speed = float(self.v_speed.get().replace(",", "."))
+        except ValueError:
+            speed = self.macro.speed
+        m = copy.deepcopy(self.macro)
+        m.loop, m.speed = False, max(0.1, min(speed, 10))
+        be = DryRunBackend()
+        win = tk.Toplevel(self)
+        win.title(f"Prueba (simulación) — {m.name}")
+        win.geometry("460x360")
+        txt = tk.Text(win, font=("Consolas", 10), bg=current_palette().surface,
+                      fg=current_palette().fg, insertbackground=current_palette().fg)
+        txt.pack(fill="both", expand=True)
+        txt.insert("end", "Ejecutando…\n")
+
+        def work():
+            Runner(m, be).run()
+            win.after(0, show)
+
+        def show():
+            if not win.winfo_exists():
+                return
+            txt.delete("1.0", "end")
+            for t, ev in zip(be.times, be.events):
+                txt.insert("end", f"{t * 1000:9.1f} ms  {' '.join(str(x) for x in ev)}\n")
+            if be.times:
+                txt.insert("end", f"\nTotal: {be.times[-1] * 1000:.1f} ms, {len(be.events)} eventos")
+            else:
+                txt.insert("end", "(la macro no genera eventos)")
+
+        threading.Thread(target=work, daemon=True).start()
+
     def undo(self) -> None:
         self.ed.undo(); self.refresh()
 
@@ -217,6 +259,11 @@ class MacroEditor(tk.Toplevel):
         except ValueError:
             messagebox.showerror("Repeticiones", "Usa 1, un número ≥ 2 o 'inf'.", parent=self)
             return
+        try:
+            self.macro.speed = float(self.v_speed.get().replace(",", "."))
+        except ValueError:
+            messagebox.showerror("Velocidad", "Usa un número entre 0.1 y 10 (ej. 1 o 0.5).", parent=self)
+            return
         self.macro.name = self.v_name.get().strip()
         self.macro.trigger = self.v_trigger.get().strip().lower() or None
         self.macro.mode = self.v_mode.get()
@@ -233,5 +280,5 @@ class MacroEditor(tk.Toplevel):
         if not self.saved:  # cancelar: restaurar el estado original
             self.macro.steps[:] = self._snapshot
             (self.macro.name, self.macro.trigger, self.macro.mode,
-             self.macro.loop, self.macro.loop_from) = self._orig
+             self.macro.loop, self.macro.loop_from, self.macro.speed) = self._orig
         super().destroy()

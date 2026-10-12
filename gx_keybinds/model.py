@@ -48,12 +48,15 @@ class Macro:
     loop: int | bool = False     # False=1 vez, True=infinito, N=N veces
     description: str = ""
     loop_from: int = 0           # al repetir, reinicia desde este paso
+    speed: float = 1.0           # multiplicador de velocidad (0.1 = cámara lenta, 2 = el doble)
 
     def validate(self) -> None:
         if not self.name:
             raise MacroError("la macro necesita 'name'")
         if self.mode not in TRIGGER_MODES:
             raise MacroError(f"modo inválido: {self.mode!r}")
+        if not 0.1 <= self.speed <= 10:
+            raise MacroError("speed debe estar entre 0.1 y 10")
         if not 0 <= self.loop_from <= max(len(self.steps) - 1, 0):
             raise MacroError("loop_from fuera de rango")
         for s in self.steps:
@@ -66,7 +69,7 @@ class Macro:
             m = cls(
                 name=d["name"], steps=steps, trigger=d.get("trigger"),
                 mode=d.get("mode", "toggle"), loop=d.get("loop", False),
-                description=d.get("description", ""), loop_from=d.get("loop_from", 0),
+                description=d.get("description", ""), loop_from=d.get("loop_from", 0), speed=float(d.get("speed", 1.0)),
             )
         except (KeyError, TypeError) as e:
             raise MacroError(f"macro mal formada: {e}") from e
@@ -84,7 +87,7 @@ class Macro:
             steps.append(d)
         return {"name": self.name, "description": self.description,
                 "trigger": self.trigger, "mode": self.mode,
-                "loop": self.loop, "loop_from": self.loop_from, "steps": steps}
+                "loop": self.loop, "loop_from": self.loop_from, "speed": self.speed, "steps": steps}
 
 
 def load_macros(path: str | Path) -> list[Macro]:

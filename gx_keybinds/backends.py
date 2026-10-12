@@ -28,9 +28,15 @@ class DryRunBackend(Backend):
 
     def __init__(self, echo: bool = False):
         self.events: list[tuple] = []
+        self.times: list[float] = []     # segundos desde el primer evento (para "Probar")
+        self._t0: float | None = None
         self.echo = echo
 
     def _rec(self, *ev):
+        import time
+        now = time.perf_counter()
+        self._t0 = self._t0 if self._t0 is not None else now
+        self.times.append(now - self._t0)
         self.events.append(ev)
         if self.echo:
             print("[dry-run]", *ev)
@@ -56,6 +62,12 @@ class PynputBackend(Backend):
     def _key(self, name: str):
         if len(name) == 1:
             return name
+        from .keynames import NUMPAD, numpad_vk
+        if name in NUMPAD:
+            from pynput import keyboard
+            return keyboard.KeyCode.from_vk(numpad_vk(name))
+        if name == "num_enter":
+            return self._Key.enter
         try:
             return getattr(self._Key, name.lower())
         except AttributeError:

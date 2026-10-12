@@ -6,6 +6,10 @@ Inspirado en herramientas tipo Keyran/AutoHotkey, pero con formato propio y abie
 > Uso personal y de aprendizaje. Muchos juegos online (anti-cheat/ToS) prohíben macros
 > incluso en modos de práctica; úsalo en software offline o de pruebas bajo tu responsabilidad.
 
+## Prueba rápida en Windows
+Doble clic en `run_gui.bat` (crea un entorno, instala `pynput` y abre la interfaz). Empieza en modo
+simulación: desmarca «Simulación (dry-run)» para enviar teclas reales. F12 = pánico.
+
 ## Uso
 ```
 pip install -r requirements.txt
@@ -90,3 +94,9 @@ ratón (clic izq./medio/der., rueda ▲/▼). Clic en una tecla **inserta un pas
 (o al final) según el modo elegido: *Tocar* (pulsar y soltar), *Solo pulsar* o *Solo soltar*.
 Las teclas que usa la macro se resaltan, y las del paso seleccionado se marcan con el color de acento.
 No incluye el teclado numérico todavía.
+
+## Teclado numérico, velocidad y prueba
+- El teclado en pantalla incluye el **numérico** (`num0`…`num9`, `num_add`, `num_enter`…); se graba,
+  se reproduce y se importa desde `.amc` distinguiéndolo de la fila de números.
+- **Velocidad ×** (campo `speed`, 0.1–10) en el editor: 0.5 = cámara lenta para estudiar una secuencia.
+- **▶ Probar (simulación)**: ejecuta la macro una vez sin enviar nada y muestra cada evento con su tiempo en ms.

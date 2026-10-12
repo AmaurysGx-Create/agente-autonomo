@@ -28,6 +28,11 @@ _HID.update({40: "enter", 41: "esc", 42: "backspace", 43: "tab", 44: "space",
              228: "ctrl_r", 229: "shift_r", 230: "alt_r", 231: "cmd_r"})
 for i in range(12):
     _HID[58 + i] = f"f{i + 1}"
+_HID.update({83: "num_lock", 84: "num_divide", 85: "num_multiply", 86: "num_subtract",
+             87: "num_add", 88: "num_enter", 99: "num_decimal"})
+for i in range(1, 10):
+    _HID[88 + i] = f"num{i}"
+_HID[98] = "num0"
 _PUNCT = {45: "-", 46: "=", 47: "[", 48: "]", 49: "\\", 51: ";", 52: "'",
           53: "`", 54: ",", 55: ".", 56: "/"}
 _HID.update(_PUNCT)

@@ -62,7 +62,7 @@ class Runner:
     def _sleep(self, ms: float) -> None:
         if ms <= 0:
             return
-        end = time.perf_counter() + ms / 1000
+        end = time.perf_counter() + ms / self.macro.speed / 1000
         # Evento para esperas largas, espera activa corta para precisión.
         while not self._stop.is_set():
             left = end - time.perf_counter()

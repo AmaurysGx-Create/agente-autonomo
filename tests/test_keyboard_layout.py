@@ -10,7 +10,7 @@ def test_keys_unique_and_consistent_with_importer():
     mouse = {k for _, k, _ in MOUSE_KEYS}
     valid = set(_HID.values()) | {"menu"} | mouse
     assert [k for k in keys if k not in valid] == []          # mismos nombres que el importador .amc
-    assert {"space", "w", "shift", "f12", "up"} <= set(keys)
+    assert {"space", "w", "shift", "f12", "up", "num5", "num_add", "num_enter"} <= set(keys)
 
 
 def test_rects_do_not_overlap_and_fit():
