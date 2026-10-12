@@ -6,7 +6,7 @@ from tkinter import filedialog, messagebox, simpledialog, ttk
 
 from .backends import DryRunBackend
 from .engine import Manager
-from .model import MacroError, load_macros, save_macros
+from .model import Macro, MacroError, load_macros, save_macros
 
 
 def main() -> None:
@@ -102,6 +102,29 @@ def main() -> None:
         rec_btn.config(text="■ Detener")
         status.set("Grabando… pulsa F12 o «Detener» para terminar.")
 
+    def edit_macro():
+        sel = tree.selection()
+        if not sel:
+            messagebox.showinfo("Editor", "Selecciona una macro de la lista.")
+            return
+        macro = next(m for m in state["macros"] if m.name == sel[0])
+        stop_all()
+        from .editor import MacroEditor
+        ed = MacroEditor(root, macro)
+        if ed.saved:
+            refresh()
+
+    def new_macro():
+        name, n = "nueva_macro", 1
+        names = {m.name for m in state["macros"]}
+        while name in names:
+            n += 1
+            name = f"nueva_macro_{n}"
+        state["macros"].append(Macro(name=name, mode="once"))
+        refresh()
+        tree.selection_set(name)
+        edit_macro()
+
     def save_file():
         if not state["macros"]:
             return
@@ -118,6 +141,8 @@ def main() -> None:
     rec_btn = ttk.Button(bar, text="● Grabar", command=toggle_record)
     rec_btn.pack(side="left", padx=4)
     ttk.Button(bar, text="Guardar…", command=save_file).pack(side="left")
+    ttk.Button(bar, text="Nueva", command=new_macro).pack(side="left", padx=(8, 0))
+    ttk.Button(bar, text="Editar pasos…", command=edit_macro).pack(side="left", padx=4)
     moves = tk.BooleanVar(value=False)
     ttk.Checkbutton(bar, text="Grabar movimiento", variable=moves).pack(side="left", padx=8)
     ttk.Checkbutton(bar, text="Simulación (dry-run)", variable=dry).pack(side="right")

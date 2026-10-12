@@ -36,3 +36,8 @@ Ratón: `click` (left/right/middle, count), `down`/`up` con `key: "mouse_left"` 
 
 `.amc` también entiende `LeftDown`, `MoveR dx dy`, `WheelDown N` y `Goto N` (bucle). Macros con `loop_from`
 repiten desde ese paso tras la primera pasada.
+
+## Editor visual de pasos
+En la GUI: **Nueva** o selecciona una macro y **Editar pasos…** (doble clic en un paso para editarlo).
+Añadir/editar/duplicar/eliminar, subir/bajar, deshacer/rehacer, «Bucle desde aquí» (`loop_from`),
+y propiedades (nombre, tecla, modo, repeticiones). Cancelar descarta los cambios.
