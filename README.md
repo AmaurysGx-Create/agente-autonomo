@@ -12,7 +12,7 @@ pip install -r requirements.txt
 python -m macrolab check examples/basic.json
 python -m macrolab run examples/basic.json --dry-run   # simula, no envía nada
 python -m macrolab run examples/basic.json             # real; F12 = pánico (detiene todo)
-python -m macrolab gui
+python -m macrolab gui   # incluye botón ● Grabar (F12 o ■ Detener para terminar)
 python -m macrolab record mi_macro -o mi_macro.json --trigger f6   # F12 termina la grabación
 ```
 

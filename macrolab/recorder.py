@@ -58,44 +58,77 @@ class Recorder:
         return m
 
 
+class LiveRecorder:
+    """Graba teclado/ratón reales en segundo plano; se detiene con `stop()` o `stop_key`."""
+
+    def __init__(self, stop_key: str | None = "f12", record_moves: bool = False,
+                 on_stop=None):
+        self.rec = Recorder(record_moves=record_moves)
+        self.stop_key = stop_key.lower() if stop_key else None
+        self.on_stop = on_stop      # callback (hilo del listener) al terminar por stop_key
+        self._listeners: list = []
+        self._last_pos = None
+
+    @property
+    def active(self) -> bool:
+        return bool(self._listeners)
+
+    def start(self) -> None:
+        from pynput import keyboard, mouse
+        rec, stop = self.rec, self.stop_key
+
+        def kname(key) -> str:
+            if isinstance(key, keyboard.KeyCode) and key.char:
+                return key.char.lower()
+            return getattr(key, "name", str(key))
+
+        def on_press(key):
+            n = kname(key)
+            if n == stop:
+                self.stop()
+                if self.on_stop:
+                    self.on_stop()
+                return False
+            rec.add("key_down", n)
+
+        def on_release(key):
+            n = kname(key)
+            if n != stop:
+                rec.add("key_up", n)
+
+        def on_click(x, y, button, pressed):
+            rec.add("mouse_down" if pressed else "mouse_up", button.name)
+
+        def on_scroll(x, y, dx, dy):
+            rec.add("scroll", dx, dy)
+
+        def on_move(x, y):
+            if self._last_pos is not None:
+                rec.add("move", x - self._last_pos[0], y - self._last_pos[1])
+            self._last_pos = (x, y)
+
+        self._listeners = [
+            keyboard.Listener(on_press=on_press, on_release=on_release),
+            mouse.Listener(on_click=on_click, on_move=on_move, on_scroll=on_scroll)]
+        for l in self._listeners:
+            l.start()
+
+    def stop(self) -> None:
+        for l in self._listeners:
+            l.stop()
+        self._listeners = []
+
+    def wait(self) -> None:
+        for l in list(self._listeners):
+            l.join()
+
+    def to_macro(self, name: str, **kw) -> Macro:
+        return self.rec.to_macro(name, **kw)
+
+
 def record_live(name: str, stop_key: str = "f12", record_moves: bool = False) -> Macro:
-    """Graba teclado/ratón reales hasta pulsar `stop_key` (esa tecla no se graba)."""
-    from pynput import keyboard, mouse
-
-    rec = Recorder(record_moves=record_moves)
-    stop = stop_key.lower()
-    last_pos: list = [None]
-
-    def kname(key) -> str:
-        if isinstance(key, keyboard.KeyCode) and key.char:
-            return key.char.lower()
-        return getattr(key, "name", str(key))
-
-    def on_press(key):
-        n = kname(key)
-        if n == stop:
-            return False
-        rec.add("key_down", n)
-
-    def on_release(key):
-        n = kname(key)
-        if n != stop:
-            rec.add("key_up", n)
-
-    def on_click(x, y, button, pressed):
-        rec.add("mouse_down" if pressed else "mouse_up", button.name)
-
-    def on_scroll(x, y, dx, dy):
-        rec.add("scroll", dx, dy)
-
-    def on_move(x, y):
-        if last_pos[0] is not None:
-            rec.add("move", x - last_pos[0][0], y - last_pos[0][1])
-        last_pos[0] = (x, y)
-
-    ml = mouse.Listener(on_click=on_click, on_move=on_move, on_scroll=on_scroll)
-    ml.start()
-    with keyboard.Listener(on_press=on_press, on_release=on_release) as kl:
-        kl.join()
-    ml.stop()
-    return rec.to_macro(name)
+    """Graba hasta pulsar `stop_key` (esa tecla no se graba). Bloquea."""
+    lr = LiveRecorder(stop_key=stop_key, record_moves=record_moves)
+    lr.start()
+    lr.wait()
+    return lr.to_macro(name)
