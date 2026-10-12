@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-STEP_TYPES = {"down", "up", "tap", "click", "move", "wait", "text"}
+STEP_TYPES = {"down", "up", "tap", "click", "move", "moveto", "scroll", "wait", "text"}
 TRIGGER_MODES = {"toggle", "hold", "once"}
 
 
@@ -20,7 +20,7 @@ class Step:
     key: str | None = None      # down/up/tap
     button: str = "left"        # click
     count: int = 1              # click
-    dx: int = 0                 # move (relativo)
+    dx: int = 0                 # move/scroll (relativo); moveto: x absoluta
     dy: int = 0
     ms: float = 0               # wait / pausa tras tap
     hold_ms: float = 20         # tap: tiempo pulsada
@@ -33,6 +33,8 @@ class Step:
             raise MacroError(f"el paso '{self.type}' requiere 'key'")
         if self.type == "click" and self.button not in {"left", "right", "middle"}:
             raise MacroError(f"botón inválido: {self.button!r}")
+        if self.type == "click" and self.count > 1000:
+            raise MacroError("count demasiado alto (máx. 1000)")
         if self.ms < 0 or self.hold_ms < 0 or self.count < 1:
             raise MacroError("ms/hold_ms no pueden ser negativos y count >= 1")
 

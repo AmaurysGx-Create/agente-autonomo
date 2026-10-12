@@ -18,7 +18,7 @@ python -m macrolab record mi_macro -o mi_macro.json --trigger f6   # F12 termina
 
 ## Formato de macro
 Pasos: `down`, `up`, `tap` (key, hold_ms, ms), `click` (button, count, hold_ms, ms),
-`move` (dx, dy), `wait` (ms), `text` (value). Disparador: `trigger` + `mode`
+`move` (dx, dy), `moveto` (x en dx, y en dy), `scroll` (dx, dy), `wait` (ms), `text` (value). Disparador: `trigger` + `mode`
 (`toggle` | `hold` | `once`) y `loop` (false / true / N). Ver `examples/basic.json`.
 
 Tests: `pip install pytest && pytest`
@@ -30,3 +30,6 @@ python -m macrolab run macro.amc --dry-run --now "Nombre de la macro"   # tambi�
 ```
 Soporta `KeyDown`/`KeyUp`/`Delay` (códigos USB HID). Lo no soportado se omite con aviso;
 nunca se ejecuta código del archivo.
+
+Ratón: `click` (left/right/middle, count), `down`/`up` con `key: "mouse_left"` etc.
+(para mantener pulsado), `move`/`moveto`, `scroll`. Ver `examples/mouse.json`.

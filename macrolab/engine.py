@@ -89,6 +89,10 @@ class Runner:
                 self._sleep(s.ms)
         elif s.type == "move":
             b.mouse_move(s.dx, s.dy)
+        elif s.type == "moveto":
+            b.mouse_moveto(s.dx, s.dy)
+        elif s.type == "scroll":
+            b.scroll(s.dx, s.dy)
         elif s.type == "wait":
             self._sleep(s.ms)
         elif s.type == "text":

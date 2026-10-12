@@ -1,0 +1,17 @@
+{
+  "macros": [
+    {
+      "name": "doble_clic_y_scroll",
+      "description": "Doble clic, mover el ratón, clic derecho mantenido y scroll",
+      "trigger": "f9", "mode": "once",
+      "steps": [
+        {"type": "click", "button": "left", "count": 2, "hold_ms": 20, "ms": 60},
+        {"type": "move", "dx": 100, "dy": 0},
+        {"type": "down", "key": "mouse_right"},
+        {"type": "wait", "ms": 150},
+        {"type": "up", "key": "mouse_right"},
+        {"type": "scroll", "dy": -3}
+      ]
+    }
+  ]
+}

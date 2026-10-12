@@ -41,6 +41,8 @@ class Recorder:
                 steps.append(Step("down", key=f"mouse_{args[0]}"))
             elif kind == "mouse_up":
                 steps.append(Step("up", key=f"mouse_{args[0]}"))
+            elif kind == "scroll":
+                steps.append(Step("scroll", dx=args[0], dy=args[1]))
             elif kind == "move":
                 dx, dy = args
                 if steps and steps[-1].type == "move":
@@ -83,12 +85,15 @@ def record_live(name: str, stop_key: str = "f12", record_moves: bool = False) ->
     def on_click(x, y, button, pressed):
         rec.add("mouse_down" if pressed else "mouse_up", button.name)
 
+    def on_scroll(x, y, dx, dy):
+        rec.add("scroll", dx, dy)
+
     def on_move(x, y):
         if last_pos[0] is not None:
             rec.add("move", x - last_pos[0][0], y - last_pos[0][1])
         last_pos[0] = (x, y)
 
-    ml = mouse.Listener(on_click=on_click, on_move=on_move)
+    ml = mouse.Listener(on_click=on_click, on_move=on_move, on_scroll=on_scroll)
     ml.start()
     with keyboard.Listener(on_press=on_press, on_release=on_release) as kl:
         kl.join()

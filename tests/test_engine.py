@@ -67,3 +67,22 @@ def test_recorded_mouse_buttons_replay_as_mouse_events():
     b = DryRunBackend()
     Runner(Macro("m", [Step("down", key="mouse_left"), Step("up", key="mouse_left")]), b).run()
     assert b.events == [("mouse_down", "left"), ("mouse_up", "left")]
+
+
+def test_mouse_steps_from_json():
+    b = DryRunBackend()
+    m = load_macros("examples/mouse.json")[0]
+    for s in m.steps:
+        if s.type == "wait":
+            s.ms = 0
+    Runner(m, b).run()
+    assert b.events == [
+        ("mouse_down", "left"), ("mouse_up", "left"), ("mouse_down", "left"), ("mouse_up", "left"),
+        ("mouse_move", 100, 0), ("mouse_down", "right"), ("mouse_up", "right"), ("scroll", 0, -3)]
+
+
+def test_mouse_released_on_stop_and_moveto():
+    b = DryRunBackend()
+    r = Runner(Macro("m", [Step("moveto", dx=10, dy=20), Step("down", key="mouse_left"), Step("wait", ms=5000)]), b)
+    r.start(); time.sleep(0.05); r.stop()
+    assert b.events[0] == ("mouse_moveto", 10, 20) and b.events[-1] == ("mouse_up", "left")

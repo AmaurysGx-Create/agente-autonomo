@@ -16,6 +16,10 @@ class Backend(ABC):
     @abstractmethod
     def mouse_move(self, dx: int, dy: int) -> None: ...
     @abstractmethod
+    def mouse_moveto(self, x: int, y: int) -> None: ...
+    @abstractmethod
+    def scroll(self, dx: int, dy: int) -> None: ...
+    @abstractmethod
     def type_text(self, text: str) -> None: ...
 
 
@@ -36,6 +40,8 @@ class DryRunBackend(Backend):
     def mouse_down(self, button): self._rec("mouse_down", button)
     def mouse_up(self, button): self._rec("mouse_up", button)
     def mouse_move(self, dx, dy): self._rec("mouse_move", dx, dy)
+    def mouse_moveto(self, x, y): self._rec("mouse_moveto", x, y)
+    def scroll(self, dx, dy): self._rec("scroll", dx, dy)
     def type_text(self, text): self._rec("type_text", text)
 
 
@@ -60,4 +66,6 @@ class PynputBackend(Backend):
     def mouse_down(self, button): self._ms.press(getattr(self._Button, button))
     def mouse_up(self, button): self._ms.release(getattr(self._Button, button))
     def mouse_move(self, dx, dy): self._ms.move(dx, dy)
+    def mouse_moveto(self, x, y): self._ms.position = (x, y)
+    def scroll(self, dx, dy): self._ms.scroll(dx, dy)
     def type_text(self, text): self._kb.type(text)
