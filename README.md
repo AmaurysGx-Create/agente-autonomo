@@ -22,3 +22,11 @@ Pasos: `down`, `up`, `tap` (key, hold_ms, ms), `click` (button, count, hold_ms, 
 (`toggle` | `hold` | `once`) y `loop` (false / true / N). Ver `examples/basic.json`.
 
 Tests: `pip install pytest && pytest`
+
+## Importar macros descargadas (.amc)
+```
+python -m macrolab import macro.amc -o macro.json --trigger f6
+python -m macrolab run macro.amc --dry-run --now "Nombre de la macro"   # también se carga directo
+```
+Soporta `KeyDown`/`KeyUp`/`Delay` (códigos USB HID). Lo no soportado se omite con aviso;
+nunca se ejecuta código del archivo.

@@ -84,6 +84,9 @@ class Macro:
 
 def load_macros(path: str | Path) -> list[Macro]:
     """Carga un .json con una macro o una lista de macros."""
+    if str(path).lower().endswith(".amc"):
+        from .importers import load_amc
+        return load_amc(path)[0]
     data = json.loads(Path(path).read_text(encoding="utf-8"))
     items = data["macros"] if isinstance(data, dict) and "macros" in data else data
     if isinstance(items, dict):

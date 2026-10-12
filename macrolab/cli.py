@@ -20,6 +20,11 @@ def main(argv: list[str] | None = None) -> int:
             sp.add_argument("--panic", default="f12", help="tecla que detiene todo")
             sp.add_argument("--now", metavar="NAME", help="ejecuta una macro ya (sin hotkey)")
     sub.add_parser("gui")
+    ip = sub.add_parser("import", help="convierte un .amc descargado a JSON de MacroLab")
+    ip.add_argument("file")
+    ip.add_argument("-o", "--output", required=True)
+    ip.add_argument("--trigger", help="tecla de activación, p. ej. f6")
+    ip.add_argument("--mode", default="once", choices=["toggle", "hold", "once"])
     rp = sub.add_parser("record", help="graba una macro en vivo")
     rp.add_argument("name")
     rp.add_argument("-o", "--output", required=True, help="archivo .json de salida")
@@ -32,6 +37,22 @@ def main(argv: list[str] | None = None) -> int:
     if a.cmd == "gui":
         from .gui import main as gui_main
         gui_main()
+        return 0
+
+    if a.cmd == "import":
+        from .importers import load_amc
+        from .model import save_macros
+        try:
+            macros, warns = load_amc(a.file)
+        except (MacroError, OSError) as e:
+            print(f"error: {e}", file=sys.stderr)
+            return 1
+        for m in macros:
+            m.trigger, m.mode = a.trigger, a.mode
+        for w in warns:
+            print("aviso:", w, file=sys.stderr)
+        save_macros(a.output, macros)
+        print(f"Importadas {len(macros)} macro(s) -> {a.output}")
         return 0
 
     if a.cmd == "record":
