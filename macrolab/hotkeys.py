@@ -1,26 +1,16 @@
 """Disparadores globales con pynput. Incluye tecla de pánico que detiene todo."""
 from __future__ import annotations
 
-from .engine import Manager
+from .engine import norm_key as _norm
 
 
-def _norm(k: str) -> str:
-    k = k.lower()
-    return k if "<" in k or len(k) == 1 else f"<{k}>"
-
-
-def listen(manager: Manager, panic: str = "<f12>"):
+def listen(manager, panic: str = "<f12>"):
     """Bloquea hasta que se pulse la tecla de pánico (que además detiene macros)."""
     from pynput import keyboard
 
-    done = keyboard.Listener  # noqa: F841 (solo para claridad del import)
-    triggers = {}
-    for name, r in manager.runners.items():
-        if r.macro.trigger:
-            triggers[_norm(r.macro.trigger)] = name
-
     pressed: set[str] = set()
     hk_active: dict[str, bool] = {}
+    hk_name: dict[str, str] = {}
 
     def canon(key) -> str:
         if isinstance(key, keyboard.KeyCode) and key.char:
@@ -36,16 +26,20 @@ def listen(manager: Manager, panic: str = "<f12>"):
             manager.stop_all()
             stop_flag["stop"] = True
             return False
-        if c in triggers and not hk_active.get(c):
+        name = manager.lookup(c)
+        if name and not hk_active.get(c):
             hk_active[c] = True  # evita auto-repeat del SO
-            manager.press(triggers[c])
+            hk_name[c] = name    # recordar la macro (el perfil puede cambiar antes de soltar)
+            manager.press(name)
 
     def on_release(key):
         c = canon(key)
         pressed.discard(c)
-        if c in triggers:
+        if hk_active.get(c):
             hk_active[c] = False
-            manager.release(triggers[c])
+            name = hk_name.pop(c, None)
+            if name:
+                manager.release(name)
 
     with keyboard.Listener(on_press=on_press, on_release=on_release) as l:
         l.join()

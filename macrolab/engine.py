@@ -8,6 +8,12 @@ from .backends import Backend
 from .model import Macro, Step
 
 
+def norm_key(k: str) -> str:
+    """Normaliza un disparador: 'F6' -> '<f6>', 'a' -> 'a'."""
+    k = k.lower()
+    return k if "<" in k or len(k) == 1 else f"<{k}>"
+
+
 class Runner:
     """Ejecuta una macro; `stop()` la detiene y suelta todo lo que quedó pulsado."""
 
@@ -114,6 +120,11 @@ class Manager:
     def __init__(self, macros: list[Macro], backend: Backend):
         self.backend = backend
         self.runners = {m.name: Runner(m, backend) for m in macros}
+        self._by_trigger = {norm_key(m.trigger): m.name for m in macros if m.trigger}
+
+    def lookup(self, trigger: str) -> str | None:
+        """Nombre de la macro asociada a una tecla (ya normalizada), si hay."""
+        return self._by_trigger.get(trigger)
 
     def press(self, name: str) -> None:
         r = self.runners[name]

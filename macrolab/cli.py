@@ -20,6 +20,8 @@ def main(argv: list[str] | None = None) -> int:
             sp.add_argument("--panic", default="f12", help="tecla que detiene todo")
             sp.add_argument("--now", metavar="NAME", help="ejecuta una macro ya (sin hotkey)")
     sub.add_parser("gui")
+    wp = sub.add_parser("window", help="muestra proceso/título de la ventana activa (para crear perfiles)")
+    wp.add_argument("--delay", type=float, default=3, help="segundos de espera para cambiar de ventana")
     ip = sub.add_parser("import", help="convierte un .amc descargado a JSON de MacroLab")
     ip.add_argument("file")
     ip.add_argument("-o", "--output", required=True)
@@ -38,6 +40,23 @@ def main(argv: list[str] | None = None) -> int:
         from .gui import main as gui_main
         gui_main()
         return 0
+
+    if a.cmd == "window":
+        import time
+        from .active_window import get_active_window
+        print(f"Cambia a la ventana que quieres medir; leyendo en {a.delay:g}s…")
+        time.sleep(a.delay)
+        w = get_active_window()
+        if w is None:
+            print("No se pudo leer la ventana activa (en Linux hace falta xdotool).", file=sys.stderr)
+            return 1
+        print(f'"process": "{w.process}",  "title_contains": "{w.title}"')
+        return 0
+
+    if a.cmd in ("run", "check", "list"):
+        from .profiles import is_profile_file
+        if is_profile_file(a.file):
+            return _profiles_cmd(a)
 
     if a.cmd == "import":
         from .importers import load_amc
@@ -102,6 +121,45 @@ def main(argv: list[str] | None = None) -> int:
         listen(mgr, panic=a.panic)
     except KeyboardInterrupt:
         mgr.stop_all()
+    return 0
+
+
+def _profiles_cmd(a) -> int:
+    from .profiles import ProfileManager, load_profiles
+    try:
+        pset = load_profiles(a.file)
+    except (MacroError, OSError, ValueError) as e:
+        print(f"error: {e}", file=sys.stderr)
+        return 1
+    if a.cmd == "check":
+        print(f"OK: {len(pset.profiles)} perfil(es), {sum(len(p.macros) for p in pset.profiles)} macro(s)")
+        return 0
+    if a.cmd == "list":
+        for p in pset.profiles:
+            target = "(por defecto)" if p.is_default else f"process={p.process} title~{p.title_contains}"
+            print(f"[{p.name}] {target}")
+            for m in p.macros:
+                print(f"   {m.name:22} trigger={m.trigger} mode={m.mode} pasos={len(m.steps)}")
+        return 0
+    if getattr(a, "now", None):
+        print("--now no aplica a archivos de perfiles", file=sys.stderr)
+        return 1
+    if a.dry_run:
+        backend = DryRunBackend(echo=True)
+    else:
+        from .backends import PynputBackend
+        backend = PynputBackend()
+    from .hotkeys import listen
+    pm = ProfileManager(pset, backend, on_change=lambda p: print(
+        "Perfil activo:", p.name if p else "(ninguno)"))
+    pm.start()
+    print(f"Perfiles activos por ventana. Pánico: {a.panic}. Ctrl+C para salir.")
+    try:
+        listen(pm, panic=a.panic)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        pm.close()
     return 0
 
 

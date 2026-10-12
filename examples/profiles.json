@@ -1,0 +1,25 @@
+{
+  "profiles": [
+    {
+      "name": "Bloc de notas",
+      "process": "notepad.exe",
+      "macros": [
+        {"name": "firma", "trigger": "f6", "mode": "once",
+         "steps": [{"type": "text", "value": "-- Enviado con MacroLab"}]}
+      ]
+    },
+    {
+      "name": "Navegador (cualquier pestaña)",
+      "process": "chrome.exe",
+      "macros_file": "basic.json",
+      "bind": {"saludo": "f7"}
+    },
+    {
+      "name": "Global",
+      "macros": [
+        {"name": "autoclick", "trigger": "f8", "mode": "toggle", "loop": true,
+         "steps": [{"type": "click", "button": "left", "hold_ms": 15, "ms": 185}]}
+      ]
+    }
+  ]
+}

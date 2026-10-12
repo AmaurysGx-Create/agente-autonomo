@@ -41,3 +41,18 @@ repiten desde ese paso tras la primera pasada.
 En la GUI: **Nueva** o selecciona una macro y **Editar pasos…** (doble clic en un paso para editarlo).
 Añadir/editar/duplicar/eliminar, subir/bajar, deshacer/rehacer, «Bucle desde aquí» (`loop_from`),
 y propiedades (nombre, tecla, modo, repeticiones). Cancelar descarta los cambios.
+
+## Perfiles por programa
+Un archivo de perfiles agrupa macros y las activa según la ventana en primer plano
+(ver `examples/profiles.json`):
+```
+python -m macrolab window                       # te dice qué poner en "process" / "title_contains"
+python -m macrolab check examples/profiles.json
+python -m macrolab run examples/profiles.json --dry-run
+```
+Cada perfil tiene `process` (ej. `notepad.exe`) y/o `title_contains`; un perfil sin ninguno es el
+**por defecto** (se usa si ningún otro coincide). Puede incluir `macros` en línea, `macros_file`
+(un `.json` o un `.amc` descargado, en la misma carpeta o subcarpeta) y `bind` para asignar
+teclas: `{"Mantle Jump macro": "f6"}`. Al cambiar de ventana se detienen las macros del perfil anterior.
+En Windows la detección de ventana es nativa; en Linux requiere `xdotool`; macOS aún no.
+En la GUI, abrir un archivo de perfiles muestra un selector de perfil y la casilla «Automático».

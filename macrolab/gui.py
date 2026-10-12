@@ -15,6 +15,16 @@ def main() -> None:
     state: dict = {"mgr": None, "macros": []}
     dry = tk.BooleanVar(value=True)
 
+    profile_var = tk.StringVar()
+    auto_var = tk.BooleanVar(value=False)
+    pbar = ttk.Frame(root)
+    pbar.pack(fill="x", padx=8, pady=(8, 0))
+    ttk.Label(pbar, text="Perfil").pack(side="left")
+    profile_cb = ttk.Combobox(pbar, textvariable=profile_var, state="disabled", width=30)
+    profile_cb.pack(side="left", padx=6)
+    profile_cb.bind("<<ComboboxSelected>>", lambda e: use_profile(profile_var.get()))
+    ttk.Checkbutton(pbar, text="Automático (ventana activa)", variable=auto_var).pack(side="left")
+
     tree = ttk.Treeview(root, columns=("trigger", "mode", "loop", "steps"), show="headings", height=10)
     for c, w in (("trigger", 90), ("mode", 70), ("loop", 60), ("steps", 60)):
         tree.heading(c, text=c)
@@ -28,15 +38,44 @@ def main() -> None:
         return PynputBackend()
 
     def open_file():
-        path = filedialog.askopenfilename(filetypes=[("JSON", "*.json")])
+        path = filedialog.askopenfilename(filetypes=[("MacroLab / Keyran", "*.json *.amc"), ("Todos", "*.*")])
         if not path:
             return
         try:
+            from .profiles import is_profile_file, load_profiles
+            if is_profile_file(path):
+                state["pset"] = load_profiles(path)
+                names = [p.name for p in state["pset"].profiles]
+                profile_cb.config(values=names, state="readonly")
+                profile_var.set(names[0] if names else "")
+                use_profile(profile_var.get())
+                return
+            state["pset"] = None
+            profile_cb.config(values=[], state="disabled")
+            profile_var.set("")
             state["macros"] = load_macros(path)
         except (MacroError, OSError, ValueError) as e:
             messagebox.showerror("Error", str(e))
             return
         refresh()
+
+    def use_profile(name):
+        """Muestra las macros de un perfil (la lista es la misma del perfil: editar la modifica)."""
+        stop_all()
+        if state.get("pset") and name:
+            state["macros"] = state["pset"].get(name).macros
+            refresh()
+
+    def auto_tick():
+        # Cambia de perfil según la ventana activa (no mientras se graba o edita).
+        if auto_var.get() and state.get("pset") and rec_state["lr"] is None and not state.get("editing"):
+            from .active_window import get_active_window
+            p = state["pset"].select(get_active_window())
+            if p and p.name != profile_var.get():
+                profile_var.set(p.name)
+                use_profile(p.name)
+                status.set(f"Perfil automático: {p.name}")
+        root.after(500, auto_tick)
 
     def toggle():
         sel = tree.selection()
@@ -110,7 +149,11 @@ def main() -> None:
         macro = next(m for m in state["macros"] if m.name == sel[0])
         stop_all()
         from .editor import MacroEditor
-        ed = MacroEditor(root, macro)
+        state["editing"] = True
+        try:
+            ed = MacroEditor(root, macro)
+        finally:
+            state["editing"] = False
         if ed.saved:
             refresh()
 
@@ -130,7 +173,11 @@ def main() -> None:
             return
         path = filedialog.asksaveasfilename(defaultextension=".json", filetypes=[("JSON", "*.json")])
         if path:
-            save_macros(path, state["macros"])
+            if state.get("pset"):   # guarda todos los perfiles, no solo el visible
+                from .profiles import save_profiles
+                save_profiles(path, state["pset"])
+            else:
+                save_macros(path, state["macros"])
             status.set(f"Guardado en {path}")
 
     bar = ttk.Frame(root)
@@ -154,4 +201,5 @@ def main() -> None:
         root.destroy()
 
     root.protocol("WM_DELETE_WINDOW", on_close)
+    root.after(500, auto_tick)
     root.mainloop()
