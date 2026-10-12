@@ -6,7 +6,7 @@ import tkinter as tk
 from .keyboard_layout import key_rects
 from .themes import Palette, current_palette
 
-UNIT, GAP = 34, 3
+UNIT, GAP = 32, 3
 
 
 class OnScreenKeyboard(tk.Canvas):

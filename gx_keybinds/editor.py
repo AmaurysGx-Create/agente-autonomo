@@ -70,7 +70,8 @@ class MacroEditor(tk.Toplevel):
     def __init__(self, parent, macro: Macro):
         super().__init__(parent)
         self.title(f"Editor — {macro.name}")
-        self.geometry("760x640")
+        self.geometry("880x720")
+        self.minsize(820, 680)
         self.transient(parent)
         self.macro = macro
         self.ed = StepEditor(macro)
@@ -112,13 +113,16 @@ class MacroEditor(tk.Toplevel):
 
         side = ttk.Frame(body, padding=(8, 0))
         side.pack(side="left", fill="y")
+        n = 0
         for text, cmd in (("Añadir…", self.add_step), ("Editar…", self.edit_step),
                           ("Duplicar", self.duplicate_steps), ("Eliminar", self.delete_steps),
                           ("▲ Subir", lambda: self.move(-1)), ("▼ Bajar", lambda: self.move(1)),
                           ("Bucle desde aquí", self.set_loop_from),
                           ("Deshacer", self.undo), ("Rehacer", self.redo),
                           ("▶ Probar (simulación)", self.test_run)):
-            ttk.Button(side, text=text, command=cmd).pack(fill="x", pady=2)
+            ttk.Button(side, text=text, command=cmd).grid(
+                row=n // 2, column=n % 2, sticky="ew", padx=2, pady=2)
+            n += 1
 
         kb_box = ttk.LabelFrame(self, text="Teclado en pantalla: clic en una tecla para añadir un paso", padding=6)
         kb_box.pack(fill="x", padx=8)
@@ -226,12 +230,17 @@ class MacroEditor(tk.Toplevel):
         txt.insert("end", "Ejecutando…\n")
 
         def work():
-            Runner(m, be).run()
-            win.after(0, show)
+            Runner(m, be).run()     # solo toca el backend de simulación; la GUI se actualiza desde el hilo de Tk
 
-        def show():
+        def poll():
             if not win.winfo_exists():
                 return
+            if th.is_alive():
+                win.after(30, poll)
+            else:
+                show()
+
+        def show():
             txt.delete("1.0", "end")
             for t, ev in zip(be.times, be.events):
                 txt.insert("end", f"{t * 1000:9.1f} ms  {' '.join(str(x) for x in ev)}\n")
@@ -240,7 +249,9 @@ class MacroEditor(tk.Toplevel):
             else:
                 txt.insert("end", "(la macro no genera eventos)")
 
-        threading.Thread(target=work, daemon=True).start()
+        th = threading.Thread(target=work, daemon=True)
+        th.start()
+        win.after(30, poll)
 
     def undo(self) -> None:
         self.ed.undo(); self.refresh()

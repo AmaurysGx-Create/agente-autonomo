@@ -25,18 +25,18 @@ _MAIN_ROWS: list[list] = [
 ]
 _NAV_X = 15.5   # columna donde empieza el bloque de navegación
 _NAV: list[tuple[str, str, float, float]] = [   # (etiqueta, tecla, x, y) en teclas
-    ("Imp", "print_screen", _NAV_X, 0), ("Bloq D", "scroll_lock", _NAV_X + 1, 0), ("Pausa", "pause", _NAV_X + 2, 0),
-    ("Ins", "insert", _NAV_X, 1.5), ("Inicio", "home", _NAV_X + 1, 1.5), ("RePág", "page_up", _NAV_X + 2, 1.5),
-    ("Supr", "delete", _NAV_X, 2.5), ("Fin", "end", _NAV_X + 1, 2.5), ("AvPág", "page_down", _NAV_X + 2, 2.5),
+    ("Imp", "print_screen", _NAV_X, 0), ("ScrLk", "scroll_lock", _NAV_X + 1, 0), ("Pause", "pause", _NAV_X + 2, 0),
+    ("Ins", "insert", _NAV_X, 1.5), ("Home", "home", _NAV_X + 1, 1.5), ("PgUp", "page_up", _NAV_X + 2, 1.5),
+    ("Supr", "delete", _NAV_X, 2.5), ("Fin", "end", _NAV_X + 1, 2.5), ("PgDn", "page_down", _NAV_X + 2, 2.5),
     ("↑", "up", _NAV_X + 1, 4.5),
     ("←", "left", _NAV_X, 5.5), ("↓", "down", _NAV_X + 1, 5.5), ("→", "right", _NAV_X + 2, 5.5),
 ]
 # Fila de ratón bajo el teclado: (etiqueta, id, ancho)
 MOUSE_KEYS = [("Clic izq.", "mouse_left", 2), ("Clic medio", "mouse_middle", 2), ("Clic der.", "mouse_right", 2),
-              ("Rueda ▲", "wheel_up", 2), ("Rueda ▼", "wheel_down", 2)]
+              ("Rueda arriba", "wheel_up", 2), ("Rueda abajo", "wheel_down", 2)]
 _NUM_X = _NAV_X + 3.5
 _NUMPAD: list[tuple[str, str, float, float, float, float]] = [   # (etiqueta, tecla, x, y, ancho, alto)
-    ("Bloq N", "num_lock", _NUM_X, 1.5, 1, 1), ("/", "num_divide", _NUM_X + 1, 1.5, 1, 1),
+    ("Num", "num_lock", _NUM_X, 1.5, 1, 1), ("/", "num_divide", _NUM_X + 1, 1.5, 1, 1),
     ("*", "num_multiply", _NUM_X + 2, 1.5, 1, 1), ("-", "num_subtract", _NUM_X + 3, 1.5, 1, 1),
     ("7", "num7", _NUM_X, 2.5, 1, 1), ("8", "num8", _NUM_X + 1, 2.5, 1, 1), ("9", "num9", _NUM_X + 2, 2.5, 1, 1),
     ("+", "num_add", _NUM_X + 3, 2.5, 1, 2),

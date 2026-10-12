@@ -1,6 +1,7 @@
 """GUI mínima con tkinter: lista de macros, iniciar/detener, detener todo."""
 from __future__ import annotations
 
+import queue
 import tkinter as tk
 from tkinter import filedialog, messagebox, simpledialog, ttk
 
@@ -11,9 +12,15 @@ from .themes import apply_theme, system_prefers_dark
 from .model import Macro, MacroError, load_macros, save_macros
 
 
+def _loop_text(loop) -> str:
+    return "∞" if loop is True else ("1" if loop is False else str(loop))
+
+
 def main() -> None:
     root = tk.Tk()
     root.title("Gx Keybinds")
+    root.geometry("940x460")
+    root.minsize(760, 380)
     try:  # icono de la ventana/barra de tareas (también dentro del .exe de PyInstaller)
         from pathlib import Path
         root._icon = tk.PhotoImage(file=str(Path(__file__).with_name("icon.png")))
@@ -38,10 +45,12 @@ def main() -> None:
 
     body = ttk.Frame(root)
     body.pack(fill="both", expand=True)
-    tree = ttk.Treeview(body, columns=("trigger", "mode", "loop", "steps"), show="headings", height=10)
-    for c, w in (("trigger", 90), ("mode", 70), ("loop", 60), ("steps", 60)):
-        tree.heading(c, text=c)
-        tree.column(c, width=w)
+    tree = ttk.Treeview(body, columns=("name", "trigger", "mode", "loop", "steps"),
+                        show="headings", height=10)
+    for c, title, w in (("name", "Macro", 260), ("trigger", "Tecla", 80), ("mode", "Modo", 80),
+                        ("loop", "Repetir", 80), ("steps", "Pasos", 60)):
+        tree.heading(c, text=title)
+        tree.column(c, width=w, anchor="w")
     tree.pack(side="left", fill="both", expand=True, padx=8, pady=8)
 
     # --- Columna «Respuesta e input lag»: interruptores de ajustes de Windows (reversibles) ---
@@ -156,6 +165,18 @@ def main() -> None:
             m = self._m()
             if m: m.stop_all()
 
+    # tkinter no es seguro entre hilos (root.after desde otro hilo puede no ejecutarse nunca):
+    # los hilos de pynput dejan aquí sus avisos y el hilo de Tk los atiende cada 50 ms.
+    ui_queue: queue.SimpleQueue = queue.SimpleQueue()
+
+    def drain_ui_queue():
+        try:
+            while True:
+                ui_queue.get_nowait()()
+        except queue.Empty:
+            pass
+        root.after(50, drain_ui_queue)
+
     hotkeys_var = tk.BooleanVar(value=False)
     hk: dict = {"hl": None}
 
@@ -174,7 +195,7 @@ def main() -> None:
         try:
             from .hotkeys import HotkeyListener
             hl = HotkeyListener(_CurrentManager(), panic="f12",
-                                on_panic=lambda: root.after(0, panic_ui))
+                                on_panic=lambda: ui_queue.put(panic_ui))
             hl.start()
         except Exception as e:  # sin entorno gráfico / sin pynput
             messagebox.showerror("Atajos globales", str(e))
@@ -203,7 +224,7 @@ def main() -> None:
         tree.delete(*tree.get_children())
         for m in state["macros"]:
             tree.insert("", "end", iid=m.name, text=m.name,
-                        values=(m.trigger or "-", m.mode, m.loop, len(m.steps)))
+                        values=(m.name, m.trigger or "-", m.mode, _loop_text(m.loop), len(m.steps)))
         state["mgr"] = Manager(state["macros"], make_backend())
 
     def finish_recording():
@@ -244,9 +265,9 @@ def main() -> None:
             rec_state["resume_hotkeys"] = True
         try:
             from .recorder import LiveRecorder
-            # F12 también detiene; el callback llega desde otro hilo -> root.after
+            # F12 también detiene; el callback llega desde otro hilo -> cola ui_queue
             lr = LiveRecorder(stop_key="f12", record_moves=moves.get(),
-                              on_stop=lambda: root.after(0, finish_recording))
+                              on_stop=lambda: ui_queue.put(finish_recording))
             lr.start()
         except Exception as e:  # sin entorno gráfico / sin pynput
             messagebox.showerror("No se puede grabar", str(e))
@@ -297,7 +318,9 @@ def main() -> None:
             status.set(f"Guardado en {path}")
 
     bar = ttk.Frame(root)
-    bar.pack(fill="x", padx=8, pady=(0, 8))
+    bar.pack(fill="x", padx=8, pady=(0, 4))
+    bar2 = ttk.Frame(root)      # segunda fila: opciones (si no, no caben en ventanas estrechas)
+    bar2.pack(fill="x", padx=8, pady=(0, 8))
     ttk.Button(bar, text="Abrir…", command=open_file).pack(side="left")
     ttk.Button(bar, text="Iniciar/Parar", command=toggle).pack(side="left", padx=4)
     ttk.Button(bar, text="PARAR TODO", command=stop_all).pack(side="left")
@@ -307,10 +330,10 @@ def main() -> None:
     ttk.Button(bar, text="Nueva", command=new_macro).pack(side="left", padx=(8, 0))
     ttk.Button(bar, text="Editar pasos…", command=edit_macro).pack(side="left", padx=4)
     moves = tk.BooleanVar(value=False)
-    ttk.Checkbutton(bar, text="Grabar movimiento", variable=moves).pack(side="left", padx=8)
-    ttk.Checkbutton(bar, text="Simulación (dry-run)", variable=dry).pack(side="right")
-    ttk.Checkbutton(bar, text="Atajos globales", variable=hotkeys_var,
-                    command=on_hotkeys_toggle).pack(side="right", padx=8)
+    ttk.Checkbutton(bar2, text="Grabar movimiento", variable=moves).pack(side="left", padx=(0, 8))
+    ttk.Checkbutton(bar2, text="Simulación (dry-run)", variable=dry).pack(side="left", padx=8)
+    ttk.Checkbutton(bar2, text="Atajos globales", variable=hotkeys_var,
+                    command=on_hotkeys_toggle).pack(side="left", padx=8)
 
     def toggle_dark():
         dark_var.set(not dark_var.get())
@@ -322,8 +345,8 @@ def main() -> None:
     def theme_label():
         return "☀ Modo claro" if dark_var.get() else "🌙 Modo oscuro"
 
-    theme_btn = ttk.Button(bar, text=theme_label(), command=toggle_dark)
-    theme_btn.pack(side="right", padx=8)
+    theme_btn = ttk.Button(bar2, text=theme_label(), command=toggle_dark)
+    theme_btn.pack(side="right")
     ttk.Label(root, textvariable=status).pack(fill="x", padx=8, pady=(0, 6))
     def on_close():
         if tweaks is not None and tweaks.api.timer_active:
@@ -336,4 +359,5 @@ def main() -> None:
 
     root.protocol("WM_DELETE_WINDOW", on_close)
     root.after(500, auto_tick)
+    root.after(50, drain_ui_queue)
     root.mainloop()
