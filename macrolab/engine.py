@@ -40,7 +40,8 @@ class Runner:
         n = 0
         try:
             while not self._stop.is_set():
-                for step in self.macro.steps:
+                start = self.macro.loop_from if n > 0 else 0
+                for step in self.macro.steps[start:]:
                     if self._stop.is_set():
                         return
                     self._exec(step)

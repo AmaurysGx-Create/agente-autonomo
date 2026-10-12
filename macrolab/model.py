@@ -47,12 +47,15 @@ class Macro:
     mode: str = "toggle"         # toggle | hold | once
     loop: int | bool = False     # False=1 vez, True=infinito, N=N veces
     description: str = ""
+    loop_from: int = 0           # al repetir, reinicia desde este paso
 
     def validate(self) -> None:
         if not self.name:
             raise MacroError("la macro necesita 'name'")
         if self.mode not in TRIGGER_MODES:
             raise MacroError(f"modo inválido: {self.mode!r}")
+        if not 0 <= self.loop_from <= max(len(self.steps) - 1, 0):
+            raise MacroError("loop_from fuera de rango")
         for s in self.steps:
             s.validate()
 
@@ -63,7 +66,7 @@ class Macro:
             m = cls(
                 name=d["name"], steps=steps, trigger=d.get("trigger"),
                 mode=d.get("mode", "toggle"), loop=d.get("loop", False),
-                description=d.get("description", ""),
+                description=d.get("description", ""), loop_from=d.get("loop_from", 0),
             )
         except (KeyError, TypeError) as e:
             raise MacroError(f"macro mal formada: {e}") from e
@@ -81,7 +84,7 @@ class Macro:
             steps.append(d)
         return {"name": self.name, "description": self.description,
                 "trigger": self.trigger, "mode": self.mode,
-                "loop": self.loop, "steps": steps}
+                "loop": self.loop, "loop_from": self.loop_from, "steps": steps}
 
 
 def load_macros(path: str | Path) -> list[Macro]:

@@ -31,3 +31,24 @@ def test_amc_rejects_entities(tmp_path):
     p.write_text('<!DOCTYPE r [<!ENTITY a "b">]><Root/>')
     with pytest.raises(MacroError):
         load_amc(p)
+
+
+def test_amc_mouse_and_goto_loop(tmp_path):
+    from macrolab.backends import DryRunBackend
+    from macrolab.engine import Runner
+    p = tmp_path / "r.amc"
+    p.write_text("""<Root><DefaultMacro><Major>M</Major><GUIOption><RepeatType>1</RepeatType></GUIOption>
+<KeyDown><Syntax>LeftDown 1
+MoveR 1 0
+Delay 0 ms
+MoveR 0 -2
+Goto 2</Syntax></KeyDown></DefaultMacro></Root>""")
+    (m,), warns = load_amc(p)
+    assert not warns and m.mode == "hold" and m.loop is True and m.loop_from == 1
+    assert m.steps[0].key == "mouse_left"
+    # LeftDown solo en la primera pasada; después se repite desde la línea 2
+    import threading, time
+    b = DryRunBackend(); r = Runner(m, b); r.start(); time.sleep(0.05); r.stop()
+    kinds = [e[0] for e in b.events]
+    assert kinds.count("mouse_down") == 1 and kinds.count("mouse_move") > 2
+    assert b.events[-1] == ("mouse_up", "left")

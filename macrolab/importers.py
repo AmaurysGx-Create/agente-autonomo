@@ -32,15 +32,24 @@ _PUNCT = {45: "-", 46: "=", 47: "[", 48: "]", 49: "\\", 51: ";", 52: "'",
           53: "`", 54: ",", 55: ".", 56: "/"}
 _HID.update(_PUNCT)
 
-_LINE = re.compile(r"^(KeyDown|KeyUp)\s+(\d+)(?:\s+\d+)?$|^Delay\s+(\d+(?:\.\d+)?)\s*(?:ms)?$", re.I)
+_LINE = re.compile(
+    r"^(KeyDown|KeyUp)\s+(\d+)(?:\s+\d+)?$"            # 1,2: tecla
+    r"|^Delay\s+(\d+(?:\.\d+)?)\s*(?:ms)?$"           # 3: espera
+    r"|^(LeftDown)(?:\s+\d+)?$"                          # 4: botón izq. (visto en muestras)
+    r"|^MoveR\s+(-?\d+)\s+(-?\d+)$"                    # 5,6: movimiento relativo
+    r"|^Goto\s+(\d+)$", re.I)                           # 7: salto a la línea N (1-based)
 
 
-def parse_syntax(text: str, warnings: list[str]) -> list[Step]:
+def parse_syntax(text: str, warnings: list[str]) -> tuple[list[Step], int | None]:
+    """Devuelve (pasos, loop_from). `Goto N` final => bucle que reinicia en la línea N."""
     steps: list[Step] = []
+    line_start: dict[int, int] = {}   # nº de línea -> índice de paso
+    loop_from: int | None = None
     for n, raw in enumerate(text.splitlines(), 1):
         line = raw.strip()
         if not line:
             continue
+        line_start[n] = len(steps)
         m = _LINE.match(line)
         if not m:
             warnings.append(f"línea {n} no soportada, omitida: {line[:40]!r}")
@@ -48,13 +57,26 @@ def parse_syntax(text: str, warnings: list[str]) -> list[Step]:
         if m.group(3) is not None:
             steps.append(Step("wait", ms=float(m.group(3))))
             continue
+        if m.group(4):
+            steps.append(Step("down", key="mouse_left"))
+            continue
+        if m.group(5) is not None:
+            steps.append(Step("move", dx=int(m.group(5)), dy=int(m.group(6))))
+            continue
+        if m.group(7) is not None:
+            target = int(m.group(7))
+            if target in line_start and line_start[target] < len(steps):
+                loop_from = line_start[target]
+            else:
+                warnings.append(f"línea {n}: Goto {target} no soportado, omitido")
+            continue
         code = int(m.group(2))
         key = _HID.get(code)
         if key is None:
             warnings.append(f"línea {n}: código de tecla {code} desconocido, omitida")
             continue
         steps.append(Step("down" if m.group(1).lower() == "keydown" else "up", key=key))
-    return steps
+    return steps, loop_from
 
 
 def load_amc(path: str | Path) -> tuple[list[Macro], list[str]]:
@@ -73,17 +95,20 @@ def load_amc(path: str | Path) -> tuple[list[Macro], list[str]]:
     macros: list[Macro] = []
     for node in root.iter("DefaultMacro"):
         name = (node.findtext("Major") or p.stem).strip()
-        steps = parse_syntax(node.findtext("KeyDown/Syntax") or "", warnings)
+        steps, loop_from = parse_syntax(node.findtext("KeyDown/Syntax") or "", warnings)
         if (node.findtext("KeyUp/Syntax") or "").strip():
             warnings.append("la sección KeyUp (al soltar la tecla) no está soportada todavía")
         repeat = (node.findtext("GUIOption/RepeatType") or "0").strip()
-        if repeat != "0":
+        looping = loop_from is not None
+        if repeat not in ("0", "1"):
             warnings.append(f"RepeatType={repeat} no soportado; se ejecuta una vez")
         desc = (node.findtext("Description") or "").strip()
         software = (node.findtext("Software") or "").strip()
         if software:
             desc = f"[{software}] {desc}"
-        m = Macro(name=name, steps=steps, description=desc, mode="once", loop=False)
+        m = Macro(name=name, steps=steps, description=desc,
+                  mode="hold" if looping else "once", loop=looping,
+                  loop_from=loop_from or 0)
         m.validate()
         macros.append(m)
     if not macros:
