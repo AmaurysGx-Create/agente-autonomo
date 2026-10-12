@@ -8,7 +8,7 @@ a = Analysis(
     pathex=[ROOT],
     datas=[(os.path.join(ROOT, "examples"), "examples"),
            (os.path.join(ROOT, "gx_keybinds", "icon.png"), "gx_keybinds")],
-    hiddenimports=["pynput.keyboard._win32", "pynput.mouse._win32"],
+    hiddenimports=["pynput.keyboard._win32", "pynput.mouse._win32", "pystray._win32"],
 )
 pyz = PYZ(a.pure)
 exe = EXE(pyz, a.scripts, [], exclude_binaries=True, name="GxKeybinds", console=False,

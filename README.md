@@ -110,3 +110,9 @@ precisión de microsegundos a cambio de más CPU; se recuerda entre sesiones). *
 Límites reales: 0.01 ms es la precisión con la que Gx Keybinds *envía* las teclas. Lo que el juego lea depende de
 cuántas veces por segundo consulte el teclado (un teclado USB a 1000 Hz informa cada 1 ms como mínimo), y la
 latencia total de un juego depende del monitor, los FPS, el USB y sus ajustes.
+
+## Icono en la bandeja del sistema
+Un icono junto al reloj (clic derecho): **Mostrar Gx Keybinds**, **Iniciar/Detener atajos** (el texto cambia
+según el estado), **Editor de macros**, **Ajustes** y **Salir** (cierra el programa por completo).
+Cerrar la ventana con la X lo deja funcionando en segundo plano (lo avisa la primera vez); se puede
+desactivar en *Ajustes*, donde también está «Iniciar minimizado en la bandeja». Requiere `pystray` y `pillow`.

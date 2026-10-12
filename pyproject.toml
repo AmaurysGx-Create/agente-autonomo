@@ -8,7 +8,7 @@ dynamic = ["version"]
 description = "Motor de macros personal (teclado/ratón) con grabación, editor visual y perfiles por programa"
 readme = "README.md"
 requires-python = ">=3.10"
-dependencies = ["pynput>=1.7"]
+dependencies = ["pynput>=1.7", "pystray>=0.19", "pillow>=10"]
 
 [project.scripts]
 gxkeybinds = "gx_keybinds.cli:main"

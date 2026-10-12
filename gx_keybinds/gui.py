@@ -200,6 +200,12 @@ def main() -> None:
             pass
         root.after(50, drain_ui_queue)
 
+    tray_ref: dict = {"t": None}
+
+    def refresh_tray():
+        if tray_ref["t"]:
+            tray_ref["t"].refresh()
+
     hotkeys_var = tk.BooleanVar(value=False)
     hk: dict = {"hl": None}
 
@@ -230,6 +236,7 @@ def main() -> None:
         hotkeys_var.set(False)
         status.set("PÁNICO (F12): macros detenidas y atajos globales desactivados.")
         hotkeys_stop()
+        refresh_tray()
 
     def on_hotkeys_toggle():
         if hotkeys_var.get():
@@ -240,6 +247,7 @@ def main() -> None:
         else:
             hotkeys_stop()
             status.set("Atajos globales desactivados.")
+        refresh_tray()
 
     def refresh():
         if state["mgr"]:
@@ -372,14 +380,86 @@ def main() -> None:
     theme_btn = ttk.Button(bar2, text=theme_label(), command=toggle_dark)
     theme_btn.pack(side="right")
     ttk.Label(root, textvariable=status).grid(row=4, column=0, sticky="ew", padx=8, pady=(0, 6))
-    def on_close():
+    # --- Bandeja del sistema: icono junto al reloj con menú (Mostrar / Atajos / Editor / Ajustes / Salir) ---
+    from .tray import make_tray
+
+    def show_window():
+        root.deiconify()
+        root.lift()
+        root.focus_force()
+
+    def tray_toggle():
+        hotkeys_var.set(not hotkeys_var.get())
+        on_hotkeys_toggle()
+
+    def tray_editor():
+        show_window()
+        if not tree.selection() and tree.get_children():
+            tree.selection_set(tree.get_children()[0])
+        edit_macro()
+
+    def open_settings():
+        show_window()
+        win = tk.Toplevel(root)
+        win.title("Ajustes")
+        win.transient(root)
+        win.resizable(False, False)
+        f = ttk.Frame(win, padding=14)
+        f.pack()
+        v_close = tk.BooleanVar(value=settings.get("tray_on_close", True))
+        v_start = tk.BooleanVar(value=settings.get("start_in_tray", False))
+        v_dark = tk.BooleanVar(value=dark_var.get())
+
+        def save():
+            settings["tray_on_close"] = v_close.get()
+            settings["start_in_tray"] = v_start.get()
+            save_settings(settings)
+
+        def on_dark():
+            if v_dark.get() != dark_var.get():
+                toggle_dark()
+
+        ttk.Checkbutton(f, text="Al cerrar la ventana, seguir en segundo plano (bandeja)",
+                        variable=v_close, command=save).pack(anchor="w", pady=2)
+        ttk.Checkbutton(f, text="Iniciar minimizado en la bandeja", variable=v_start,
+                        command=save).pack(anchor="w", pady=2)
+        ttk.Checkbutton(f, text="Modo oscuro", variable=v_dark, command=on_dark).pack(anchor="w", pady=2)
+        ttk.Label(f, text="«Salir» en el menú de la bandeja cierra el programa por completo.",
+                  wraplength=360).pack(anchor="w", pady=(10, 6))
+        ttk.Button(f, text="Cerrar", command=win.destroy).pack(anchor="e")
+
+    def quit_all():
+        if tray_ref["t"]:
+            tray_ref["t"].stop()
         if tweaks is not None and tweaks.api.timer_active:
-            tweaks.api.timer_end()    # el temporizador de 1 ms solo vale mientras la app está abierta
+            tweaks.api.timer_end()    # el temporizador de 0.5 ms solo vale mientras la app está abierta
         hotkeys_stop()
         stop_all()
         if rec_state["lr"] is not None:
             rec_state["lr"].stop()
         root.destroy()
+
+    def on_close():
+        if tray_ref["t"] and settings.get("tray_on_close", True):
+            root.withdraw()           # sigue funcionando en segundo plano
+            if not settings.get("tray_hint_shown"):
+                settings["tray_hint_shown"] = True
+                save_settings(settings)
+                tray_ref["t"].notify("Sigue activo en la bandeja. Clic derecho → Salir para cerrarlo del todo.")
+        else:
+            quit_all()
+
+    def to_ui(fn):
+        return lambda: ui_queue.put(fn)   # el menú de la bandeja corre en otro hilo
+
+    tray_ref["t"] = make_tray(
+        {"show": to_ui(show_window), "toggle": to_ui(tray_toggle), "editor": to_ui(tray_editor),
+         "settings": to_ui(open_settings), "exit": to_ui(quit_all)},
+        is_running=lambda: bool(hk["hl"]))
+    if tray_ref["t"]:
+        tray_ref["t"].start()
+        if settings.get("start_in_tray"):
+            root.withdraw()
 
     root.protocol("WM_DELETE_WINDOW", on_close)
     root.after(500, auto_tick)
