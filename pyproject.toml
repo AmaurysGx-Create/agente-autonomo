@@ -19,5 +19,8 @@ gxkeybinds-gui = "gx_keybinds.gui:main"
 [tool.setuptools]
 packages = ["gx_keybinds"]
 
+[tool.setuptools.package-data]
+gx_keybinds = ["icon.png"]
+
 [tool.setuptools.dynamic]
 version = { attr = "gx_keybinds.__version__" }

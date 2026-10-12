@@ -67,6 +67,8 @@ Genera `dist\GxKeybinds\GxKeybinds.exe` (PyInstaller, sin consola) y, si Inno Se
 Inicio, icono opcional en el escritorio y desinstalador. También se construye en GitHub Actions
 (`.github/workflows/windows-installer.yml`, manual o al subir un tag `v*`; el instalador queda como artefacto).
 
+Icono: `assets/icon.ico` (exe e instalador) y `gx_keybinds/icon.png` (ventana). Para cambiarlo, reemplaza esos archivos.
+
 Notas: un programa que envía teclas/ratón no puede controlar ventanas ejecutadas como administrador
 salvo que Gx Keybinds también se ejecute como administrador. Los ejecutables de PyInstaller a veces
 los marca el antivirus como falso positivo: añade la carpeta de instalación a las exclusiones si pasa.

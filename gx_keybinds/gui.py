@@ -12,6 +12,12 @@ from .model import Macro, MacroError, load_macros, save_macros
 def main() -> None:
     root = tk.Tk()
     root.title("Gx Keybinds")
+    try:  # icono de la ventana/barra de tareas (también dentro del .exe de PyInstaller)
+        from pathlib import Path
+        root._icon = tk.PhotoImage(file=str(Path(__file__).with_name("icon.png")))
+        root.iconphoto(True, root._icon)
+    except Exception:
+        pass
     state: dict = {"mgr": None, "macros": []}
     dry = tk.BooleanVar(value=True)
 
