@@ -1,4 +1,4 @@
-"""CLI: macrolab run|check|list|gui."""
+"""CLI: gx_keybinds run|check|list|gui."""
 from __future__ import annotations
 
 import argparse
@@ -10,7 +10,7 @@ from .model import MacroError, load_macros
 
 
 def main(argv: list[str] | None = None) -> int:
-    p = argparse.ArgumentParser(prog="macrolab", description=__doc__)
+    p = argparse.ArgumentParser(prog="gx_keybinds", description=__doc__)
     sub = p.add_subparsers(dest="cmd", required=True)
     for name in ("run", "check", "list"):
         sp = sub.add_parser(name)
@@ -22,7 +22,7 @@ def main(argv: list[str] | None = None) -> int:
     sub.add_parser("gui")
     wp = sub.add_parser("window", help="muestra proceso/título de la ventana activa (para crear perfiles)")
     wp.add_argument("--delay", type=float, default=3, help="segundos de espera para cambiar de ventana")
-    ip = sub.add_parser("import", help="convierte un .amc descargado a JSON de MacroLab")
+    ip = sub.add_parser("import", help="convierte un .amc descargado a JSON de Gx Keybinds")
     ip.add_argument("file")
     ip.add_argument("-o", "--output", required=True)
     ip.add_argument("--trigger", help="tecla de activación, p. ej. f6")

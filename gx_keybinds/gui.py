@@ -11,7 +11,7 @@ from .model import Macro, MacroError, load_macros, save_macros
 
 def main() -> None:
     root = tk.Tk()
-    root.title("MacroLab")
+    root.title("Gx Keybinds")
     state: dict = {"mgr": None, "macros": []}
     dry = tk.BooleanVar(value=True)
 
@@ -38,7 +38,7 @@ def main() -> None:
         return PynputBackend()
 
     def open_file():
-        path = filedialog.askopenfilename(filetypes=[("MacroLab / Keyran", "*.json *.amc"), ("Todos", "*.*")])
+        path = filedialog.askopenfilename(filetypes=[("Gx Keybinds / Keyran", "*.json *.amc"), ("Todos", "*.*")])
         if not path:
             return
         try:

@@ -1,7 +1,7 @@
 import pytest
 
-from macrolab.importers import load_amc
-from macrolab.model import MacroError, load_macros
+from gx_keybinds.importers import load_amc
+from gx_keybinds.model import MacroError, load_macros
 
 AMC = """<Root><DefaultMacro><Major>Demo</Major><Description>d</Description>
 <GUIOption><RepeatType>0</RepeatType></GUIOption><KeyUp><Syntax></Syntax></KeyUp>
@@ -34,8 +34,8 @@ def test_amc_rejects_entities(tmp_path):
 
 
 def test_amc_mouse_and_goto_loop(tmp_path):
-    from macrolab.backends import DryRunBackend
-    from macrolab.engine import Runner
+    from gx_keybinds.backends import DryRunBackend
+    from gx_keybinds.engine import Runner
     p = tmp_path / "r.amc"
     p.write_text("""<Root><DefaultMacro><Major>M</Major><GUIOption><RepeatType>1</RepeatType></GUIOption>
 <KeyDown><Syntax>LeftDown 1

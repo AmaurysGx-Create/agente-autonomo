@@ -1,4 +1,4 @@
-"""Importa macros en formato .amc (XML con script de texto) a macros de MacroLab.
+"""Importa macros en formato .amc (XML con script de texto) a macros de Gx Keybinds.
 
 Seguridad: el archivo se trata solo como datos. Se rechazan DOCTYPE/ENTITY (XML bombs),
 solo se aceptan las instrucciones KeyDown/KeyUp/Delay; cualquier otra línea se omite y
@@ -14,7 +14,7 @@ from .model import Macro, MacroError, Step
 
 MAX_BYTES = 1_000_000
 
-# Códigos USB HID (Keyboard/Keypad page) -> nombre de tecla de MacroLab/pynput.
+# Códigos USB HID (Keyboard/Keypad page) -> nombre de tecla de Gx Keybinds/pynput.
 _HID: dict[int, str] = {}
 for i, c in enumerate("abcdefghijklmnopqrstuvwxyz"):
     _HID[4 + i] = c

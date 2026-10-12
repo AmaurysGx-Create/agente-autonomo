@@ -5,7 +5,7 @@
       "process": "notepad.exe",
       "macros": [
         {"name": "firma", "trigger": "f6", "mode": "once",
-         "steps": [{"type": "text", "value": "-- Enviado con MacroLab"}]}
+         "steps": [{"type": "text", "value": "-- Enviado con Gx Keybinds"}]}
       ]
     },
     {

@@ -3,9 +3,9 @@ import time
 
 import pytest
 
-from macrolab.backends import DryRunBackend
-from macrolab.engine import Manager, Runner
-from macrolab.model import Macro, MacroError, Step, load_macros, save_macros
+from gx_keybinds.backends import DryRunBackend
+from gx_keybinds.engine import Manager, Runner
+from gx_keybinds.model import Macro, MacroError, Step, load_macros, save_macros
 
 
 def test_runs_steps_in_order():
@@ -49,7 +49,7 @@ def test_validation_and_roundtrip(tmp_path):
 
 
 def test_recorder_builds_steps_with_waits():
-    from macrolab.recorder import Recorder
+    from gx_keybinds.recorder import Recorder
     r = Recorder(record_moves=True)
     r.add("key_down", "a", t=0.0)
     r.add("key_up", "a", t=0.05)

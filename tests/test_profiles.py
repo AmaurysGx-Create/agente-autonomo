@@ -3,10 +3,10 @@ import time
 
 import pytest
 
-from macrolab.active_window import Window
-from macrolab.backends import DryRunBackend
-from macrolab.model import MacroError
-from macrolab.profiles import ProfileManager, is_profile_file, load_profiles, save_profiles
+from gx_keybinds.active_window import Window
+from gx_keybinds.backends import DryRunBackend
+from gx_keybinds.model import MacroError
+from gx_keybinds.profiles import ProfileManager, is_profile_file, load_profiles, save_profiles
 
 M = lambda name, trig, ms=5000: {"name": name, "trigger": trig, "mode": "toggle", "loop": True,
                                   "steps": [{"type": "down", "key": "w"}, {"type": "wait", "ms": ms}]}
@@ -36,7 +36,7 @@ def test_select_rules(pset):
 
 
 def load_profiles_no_default():
-    from macrolab.profiles import ProfileSet, Profile
+    from gx_keybinds.profiles import ProfileSet, Profile
     return ProfileSet([Profile("solo", [], process="a.exe")])
 
 

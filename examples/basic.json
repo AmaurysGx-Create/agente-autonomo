@@ -10,7 +10,7 @@
       "name": "saludo",
       "description": "Escribe un texto al pulsar F7",
       "trigger": "f7", "mode": "once",
-      "steps": [{"type": "text", "value": "hola desde MacroLab"}]
+      "steps": [{"type": "text", "value": "hola desde Gx Keybinds"}]
     },
     {
       "name": "tap_secuencia",

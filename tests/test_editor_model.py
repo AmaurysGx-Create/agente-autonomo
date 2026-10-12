@@ -1,7 +1,7 @@
 import pytest
 
-from macrolab.editor_model import StepEditor, build_step, describe, duration_ms, step_values
-from macrolab.model import Macro, MacroError, Step
+from gx_keybinds.editor_model import StepEditor, build_step, describe, duration_ms, step_values
+from gx_keybinds.model import Macro, MacroError, Step
 
 
 def mk():

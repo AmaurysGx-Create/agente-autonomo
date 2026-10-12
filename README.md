@@ -1,4 +1,4 @@
-# MacroLab
+# Gx Keybinds
 
 Motor de macros personal (teclado/ratón), escrito en Python para practicar programación.
 Inspirado en herramientas tipo Keyran/AutoHotkey, pero con formato propio y abierto (JSON).
@@ -9,11 +9,11 @@ Inspirado en herramientas tipo Keyran/AutoHotkey, pero con formato propio y abie
 ## Uso
 ```
 pip install -r requirements.txt
-python -m macrolab check examples/basic.json
-python -m macrolab run examples/basic.json --dry-run   # simula, no envía nada
-python -m macrolab run examples/basic.json             # real; F12 = pánico (detiene todo)
-python -m macrolab gui   # incluye botón ● Grabar (F12 o ■ Detener para terminar)
-python -m macrolab record mi_macro -o mi_macro.json --trigger f6   # F12 termina la grabación
+python -m gx_keybinds check examples/basic.json
+python -m gx_keybinds run examples/basic.json --dry-run   # simula, no envía nada
+python -m gx_keybinds run examples/basic.json             # real; F12 = pánico (detiene todo)
+python -m gx_keybinds gui   # incluye botón ● Grabar (F12 o ■ Detener para terminar)
+python -m gx_keybinds record mi_macro -o mi_macro.json --trigger f6   # F12 termina la grabación
 ```
 
 ## Formato de macro
@@ -25,8 +25,8 @@ Tests: `pip install pytest && pytest`
 
 ## Importar macros descargadas (.amc)
 ```
-python -m macrolab import macro.amc -o macro.json --trigger f6
-python -m macrolab run macro.amc --dry-run --now "Nombre de la macro"   # también se carga directo
+python -m gx_keybinds import macro.amc -o macro.json --trigger f6
+python -m gx_keybinds run macro.amc --dry-run --now "Nombre de la macro"   # también se carga directo
 ```
 Soporta `KeyDown`/`KeyUp`/`Delay` (códigos USB HID). Lo no soportado se omite con aviso;
 nunca se ejecuta código del archivo.
@@ -46,9 +46,9 @@ y propiedades (nombre, tecla, modo, repeticiones). Cancelar descarta los cambios
 Un archivo de perfiles agrupa macros y las activa según la ventana en primer plano
 (ver `examples/profiles.json`):
 ```
-python -m macrolab window                       # te dice qué poner en "process" / "title_contains"
-python -m macrolab check examples/profiles.json
-python -m macrolab run examples/profiles.json --dry-run
+python -m gx_keybinds window                       # te dice qué poner en "process" / "title_contains"
+python -m gx_keybinds check examples/profiles.json
+python -m gx_keybinds run examples/profiles.json --dry-run
 ```
 Cada perfil tiene `process` (ej. `notepad.exe`) y/o `title_contains`; un perfil sin ninguno es el
 **por defecto** (se usa si ningún otro coincide). Puede incluir `macros` en línea, `macros_file`
