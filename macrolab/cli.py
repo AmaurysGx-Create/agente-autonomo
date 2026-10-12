@@ -24,7 +24,7 @@ def main(argv: list[str] | None = None) -> int:
     ip.add_argument("file")
     ip.add_argument("-o", "--output", required=True)
     ip.add_argument("--trigger", help="tecla de activación, p. ej. f6")
-    ip.add_argument("--mode", default="once", choices=["toggle", "hold", "once"])
+    ip.add_argument("--mode", choices=["toggle", "hold", "once"], help="por defecto el del archivo")
     rp = sub.add_parser("record", help="graba una macro en vivo")
     rp.add_argument("name")
     rp.add_argument("-o", "--output", required=True, help="archivo .json de salida")
@@ -48,7 +48,8 @@ def main(argv: list[str] | None = None) -> int:
             print(f"error: {e}", file=sys.stderr)
             return 1
         for m in macros:
-            m.trigger, m.mode = a.trigger, a.mode
+            m.trigger = a.trigger
+            m.mode = a.mode or m.mode
         for w in warns:
             print("aviso:", w, file=sys.stderr)
         save_macros(a.output, macros)
