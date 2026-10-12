@@ -59,7 +59,12 @@ def main() -> None:
             except (TweakError, OSError) as e:
                 tweak_vars[tid].set(tweaks.get(tid).is_on())
                 messagebox.showerror("Ajuste de Windows", str(e))
+        last_group = None
         for t in tweaks.tweaks:
+            if t.group != last_group:
+                last_group = t.group
+                ttk.Label(side, text=t.group.upper() if t.group != "Opcional" else "OPCIONAL",
+                          font=("TkDefaultFont", 8, "bold")).pack(anchor="w", pady=(10, 0))
             try:
                 on = t.is_on()
             except (TweakError, OSError):

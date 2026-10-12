@@ -102,8 +102,11 @@ No incluye el teclado numérico todavía.
 - **▶ Probar (simulación)**: ejecuta la macro una vez sin enviar nada y muestra cada evento con su tiempo en ms.
 
 ## Respuesta e input lag (columna derecha de la GUI, solo Windows)
-Interruptores de encendido/apagado, todos reversibles («Apagar todos» restaura lo que tenías):
-**Repetición de teclas al máximo** (retardo 250 ms, ~30/s), **Ratón sin aceleración**,
-**Temporizador de 1 ms** (macros más precisas mientras la app esté abierta) y **Plan de energía de alto
-rendimiento**. Importante: la repetición solo afecta a teclas *mantenidas*; la latencia real de un juego
-depende sobre todo del monitor, los FPS, el USB y los ajustes del juego.
+Interruptores de encendido/apagado, todos reversibles («Apagar todos» restaura lo que tenías).
+**Teclado:** repetición de teclas al máximo (retardo 250 ms, ~30/s al mantener una tecla),
+temporizador del sistema a 0.5 ms (mientras la app esté abierta) y **macros a 0.01 ms** (espera activa:
+precisión de microsegundos a cambio de más CPU; se recuerda entre sesiones). **Opcional:** ratón sin aceleración.
+
+Límites reales: 0.01 ms es la precisión con la que Gx Keybinds *envía* las teclas. Lo que el juego lea depende de
+cuántas veces por segundo consulte el teclado (un teclado USB a 1000 Hz informa cada 1 ms como mínimo), y la
+latencia total de un juego depende del monitor, los FPS, el USB y sus ajustes.

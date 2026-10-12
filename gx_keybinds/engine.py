@@ -14,6 +14,11 @@ def norm_key(k: str) -> str:
     return k if "<" in k or len(k) == 1 else f"<{k}>"
 
 
+# Últimos `SPIN_S` segundos de cada espera se hacen con espera activa (precisión de microsegundos,
+# a cambio de uso de CPU). El ajuste «Macros a 0.01 ms» lo sube; ver system_tweaks.
+SPIN_S = 0.003
+
+
 class Runner:
     """Ejecuta una macro; `stop()` la detiene y suelta todo lo que quedó pulsado."""
 
@@ -68,8 +73,8 @@ class Runner:
             left = end - time.perf_counter()
             if left <= 0:
                 return
-            if left > 0.003:
-                self._stop.wait(left - 0.002)
+            if left > SPIN_S:
+                self._stop.wait(left - SPIN_S)
 
     def _exec(self, s: Step) -> None:
         b = self.backend
