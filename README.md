@@ -83,3 +83,10 @@ Casilla **Atajos globales** (barra inferior): las teclas de activación de las m
 la ventana no tenga el foco, según el modo (`toggle`, `hold`, `once`). **F12 = pánico**: detiene
 todas las macros y desactiva los atajos. Usan la lista/perfil que estés viendo, se pausan mientras
 grabas y avisan si dos macros comparten la misma tecla. Empieza en modo simulación (dry-run).
+
+## Teclado en pantalla (editor de pasos)
+Dentro del editor hay un teclado completo (F1–F12, bloque principal, navegación, flechas) y una fila de
+ratón (clic izq./medio/der., rueda ▲/▼). Clic en una tecla **inserta un paso** tras la selección
+(o al final) según el modo elegido: *Tocar* (pulsar y soltar), *Solo pulsar* o *Solo soltar*.
+Las teclas que usa la macro se resaltan, y las del paso seleccionado se marcan con el color de acento.
+No incluye el teclado numérico todavía.

@@ -6,6 +6,8 @@ from tkinter import messagebox, ttk
 
 from .editor_model import FIELDS, StepEditor, build_step, describe, duration_ms, step_values
 from .model import Macro, MacroError, Step
+from .keyboard_layout import keys_used, step_for_key
+from .keyboard_widget import OnScreenKeyboard
 from .themes import current_palette
 
 
@@ -68,7 +70,7 @@ class MacroEditor(tk.Toplevel):
     def __init__(self, parent, macro: Macro):
         super().__init__(parent)
         self.title(f"Editor — {macro.name}")
-        self.geometry("720x460")
+        self.geometry("760x640")
         self.transient(parent)
         self.macro = macro
         self.ed = StepEditor(macro)
@@ -114,6 +116,18 @@ class MacroEditor(tk.Toplevel):
                           ("Deshacer", self.undo), ("Rehacer", self.redo)):
             ttk.Button(side, text=text, command=cmd).pack(fill="x", pady=2)
 
+        kb_box = ttk.LabelFrame(self, text="Teclado en pantalla: clic en una tecla para añadir un paso", padding=6)
+        kb_box.pack(fill="x", padx=8)
+        mode_bar = ttk.Frame(kb_box)
+        mode_bar.pack(fill="x", pady=(0, 4))
+        self.v_kbmode = tk.StringVar(value="tap")
+        ttk.Label(mode_bar, text="Al pulsar una tecla:").pack(side="left")
+        for text, val in (("Tocar (pulsar y soltar)", "tap"), ("Solo pulsar", "down"), ("Solo soltar", "up")):
+            ttk.Radiobutton(mode_bar, text=text, value=val, variable=self.v_kbmode).pack(side="left", padx=6)
+        self.kb = OnScreenKeyboard(kb_box, on_key=self.add_from_key)
+        self.kb.pack(anchor="center")
+        self.tree.bind("<<TreeviewSelect>>", lambda e: self._update_kb())
+
         foot = ttk.Frame(self, padding=8)
         foot.pack(fill="x")
         self.info = tk.StringVar()
@@ -136,8 +150,20 @@ class MacroEditor(tk.Toplevel):
         for i in select or []:
             if self.tree.exists(str(i)):
                 self.tree.selection_add(str(i))
+        self._update_kb()
         extra = f" · bucle desde el paso {self.macro.loop_from + 1}" if self.macro.loop_from else ""
         self.info.set(f"{len(self.ed.steps)} pasos · ~{duration_ms(self.macro):g} ms por pasada{extra}")
+
+    def _update_kb(self) -> None:
+        sel_steps = [self.ed.steps[i] for i in self._sel() if i < len(self.ed.steps)]
+        self.kb.set_highlight(keys_used(self.ed.steps), keys_used(sel_steps))
+
+    def add_from_key(self, key: str) -> None:
+        """Clic en el teclado en pantalla: inserta un paso tras la selección (o al final)."""
+        sel = self._sel()
+        i = self.ed.add(step_for_key(key, self.v_kbmode.get()), sel[-1] + 1 if sel else None)
+        self.refresh([i])
+        self.tree.see(str(i))
 
     def _sel(self) -> list[int]:
         return sorted(int(i) for i in self.tree.selection())
