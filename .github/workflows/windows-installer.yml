@@ -26,7 +26,16 @@ jobs:
           $ver = python -c "import gx_keybinds;print(gx_keybinds.__version__)"
           choco install innosetup -y --no-progress
           & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" "/DMyAppVersion=$ver" packaging\installer.iss
+      - name: Portable zip (sin instalar, para copiar a otros equipos)
+        shell: pwsh
+        run: |
+          $ver = python -c "import gx_keybinds;print(gx_keybinds.__version__)"
+          Compress-Archive -Path dist\GxKeybinds -DestinationPath "dist\GxKeybinds-portable-$ver.zip"
       - uses: actions/upload-artifact@v4
         with:
           name: GxKeybinds-Setup
           path: dist/GxKeybinds-Setup-*.exe
+      - uses: actions/upload-artifact@v4
+        with:
+          name: GxKeybinds-Portable
+          path: dist/GxKeybinds-portable-*.zip
