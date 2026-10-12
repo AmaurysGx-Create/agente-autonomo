@@ -4,6 +4,7 @@ on:
   workflow_dispatch:
   push:
     tags: ["v*"]
+    branches: ["claude/keen-shannon-85rbj0"]
 
 jobs:
   build:
