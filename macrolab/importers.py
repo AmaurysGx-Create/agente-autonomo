@@ -37,7 +37,8 @@ _LINE = re.compile(
     r"|^Delay\s+(\d+(?:\.\d+)?)\s*(?:ms)?$"           # 3: espera
     r"|^(LeftDown)(?:\s+\d+)?$"                          # 4: botón izq. (visto en muestras)
     r"|^MoveR\s+(-?\d+)\s+(-?\d+)$"                    # 5,6: movimiento relativo
-    r"|^Goto\s+(\d+)$", re.I)                           # 7: salto a la línea N (1-based)
+    r"|^Goto\s+(\d+)$"
+    r"|^WheelDown\s+(\d+)$", re.I)                      # 8: rueda hacia abajo (visto en muestras)                           # 7: salto a la línea N (1-based)
 
 
 def parse_syntax(text: str, warnings: list[str]) -> tuple[list[Step], int | None]:
@@ -62,6 +63,9 @@ def parse_syntax(text: str, warnings: list[str]) -> tuple[list[Step], int | None
             continue
         if m.group(5) is not None:
             steps.append(Step("move", dx=int(m.group(5)), dy=int(m.group(6))))
+            continue
+        if m.group(8) is not None:
+            steps.append(Step("scroll", dy=-int(m.group(8))))  # abajo = negativo
             continue
         if m.group(7) is not None:
             target = int(m.group(7))

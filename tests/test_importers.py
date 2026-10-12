@@ -52,3 +52,12 @@ Goto 2</Syntax></KeyDown></DefaultMacro></Root>""")
     kinds = [e[0] for e in b.events]
     assert kinds.count("mouse_down") == 1 and kinds.count("mouse_move") > 2
     assert b.events[-1] == ("mouse_up", "left")
+
+
+def test_amc_wheel_and_delay_without_unit(tmp_path):
+    p = tmp_path / "w.amc"
+    p.write_text("<Root><DefaultMacro><Major>W</Major><KeyDown><Syntax>WheelDown 1\nDelay 64\nKeyDown 6 1\nKeyUp 6 1</Syntax></KeyDown></DefaultMacro></Root>")
+    (m,), warns = load_amc(p)
+    assert not warns
+    assert [(s.type, s.dy, s.ms, s.key) for s in m.steps] == [
+        ("scroll", -1, 0, None), ("wait", 0, 64.0, None), ("down", 0, 0, "c"), ("up", 0, 0, "c")]

@@ -34,5 +34,5 @@ nunca se ejecuta código del archivo.
 Ratón: `click` (left/right/middle, count), `down`/`up` con `key: "mouse_left"` etc.
 (para mantener pulsado), `move`/`moveto`, `scroll`. Ver `examples/mouse.json`.
 
-`.amc` también entiende `LeftDown`, `MoveR dx dy` y `Goto N` (bucle). Macros con `loop_from`
+`.amc` también entiende `LeftDown`, `MoveR dx dy`, `WheelDown N` y `Goto N` (bucle). Macros con `loop_from`
 repiten desde ese paso tras la primera pasada.
