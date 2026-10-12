@@ -133,9 +133,17 @@ class TweakManager:
         (t.enable if on else t.disable)()
         return t.is_on()
 
+    def can_restore(self, tid: str) -> bool:
+        """¿Se puede apagar sin perder datos? Falso si el ajuste ya estaba activo antes de abrir la app
+        (no tenemos guardado el valor original del usuario)."""
+        if tid in ("keys", "mouse"):
+            return tid in self._backup()
+        return True
+
     def restore_all(self) -> None:
+        """Apaga lo que activó esta app; no toca ajustes que el usuario ya tenía de antes."""
         for t in self.tweaks:
-            if t.is_on():
+            if t.is_on() and self.can_restore(t.id):
                 t.disable()
 
     # --- respaldo de valores originales ---

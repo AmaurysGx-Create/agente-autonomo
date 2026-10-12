@@ -8,7 +8,7 @@ from tkinter import filedialog, messagebox, simpledialog, ttk
 from .backends import DryRunBackend
 from .engine import Manager
 from .settings import load_settings, save_settings
-from .themes import apply_theme, system_prefers_dark
+from .themes import apply_theme, current_palette, system_prefers_dark
 from .model import Macro, MacroError, load_macros, save_macros
 
 
@@ -19,7 +19,7 @@ def _loop_text(loop) -> str:
 def main() -> None:
     root = tk.Tk()
     root.title("Gx Keybinds")
-    root.geometry("940x460")
+    root.geometry("960x560")
     root.minsize(760, 380)
     try:  # icono de la ventana/barra de tareas (también dentro del .exe de PyInstaller)
         from pathlib import Path
@@ -36,7 +36,9 @@ def main() -> None:
     profile_var = tk.StringVar()
     auto_var = tk.BooleanVar(value=False)
     pbar = ttk.Frame(root)
-    pbar.pack(fill="x", padx=8, pady=(8, 0))
+    root.columnconfigure(0, weight=1)
+    root.rowconfigure(1, weight=1)       # solo la zona central (lista + ajustes) cede espacio
+    pbar.grid(row=0, column=0, sticky="ew", padx=8, pady=(8, 0))
     ttk.Label(pbar, text="Perfil").pack(side="left")
     profile_cb = ttk.Combobox(pbar, textvariable=profile_var, state="disabled", width=30)
     profile_cb.pack(side="left", padx=6)
@@ -44,7 +46,7 @@ def main() -> None:
     ttk.Checkbutton(pbar, text="Automático (ventana activa)", variable=auto_var).pack(side="left")
 
     body = ttk.Frame(root)
-    body.pack(fill="both", expand=True)
+    body.grid(row=1, column=0, sticky="nsew")
     tree = ttk.Treeview(body, columns=("name", "trigger", "mode", "loop", "steps"),
                         show="headings", height=10)
     for c, title, w in (("name", "Macro", 260), ("trigger", "Tecla", 80), ("mode", "Modo", 80),
@@ -56,13 +58,33 @@ def main() -> None:
     # --- Columna «Respuesta e input lag»: interruptores de ajustes de Windows (reversibles) ---
     from .system_tweaks import TweakError, make_manager
     tweaks = make_manager(settings, lambda: save_settings(settings))
-    side = ttk.LabelFrame(body, text="Respuesta e input lag", padding=8)
-    side.pack(side="right", fill="y", padx=(0, 8), pady=8)
+    side_wrap = ttk.Frame(body)
+    side_wrap.pack(side="right", fill="y", padx=(0, 8), pady=8, before=tree)   # primero: es lo que no debe recortarse
+    side_canvas = tk.Canvas(side_wrap, width=272, highlightthickness=0, bd=0)
+    side_scroll = ttk.Scrollbar(side_wrap, orient="vertical", command=side_canvas.yview)
+    side_canvas.configure(yscrollcommand=side_scroll.set)
+    side_canvas.pack(side="left", fill="y")
+    side_scroll.pack(side="left", fill="y")
+    side = ttk.LabelFrame(side_canvas, text="Respuesta e input lag", padding=8)
+    side_canvas.create_window((0, 0), window=side, anchor="nw", width=268)
+    side.bind("<Configure>", lambda e: side_canvas.configure(scrollregion=side_canvas.bbox("all")))
+    side_canvas.bind("<Enter>", lambda e: side_canvas.bind_all(
+        "<MouseWheel>", lambda ev: side_canvas.yview_scroll(-1 * (ev.delta // 120), "units")))
+    side_canvas.bind("<Leave>", lambda e: side_canvas.unbind_all("<MouseWheel>"))
+    side_canvas.configure(bg=current_palette().bg)
     tweak_vars: dict = {}
     if tweaks is None:
-        ttk.Label(side, text="Disponible solo en Windows.", wraplength=190).pack()
+        ttk.Label(side, text="Disponible solo en Windows.", wraplength=215).pack()
     else:
         def on_tweak(tid):
+            if not tweak_vars[tid].get() and not tweaks.can_restore(tid):
+                if not messagebox.askyesno(
+                        "Volver a los valores de Windows",
+                        "Este ajuste ya estaba activo antes de abrir Gx Keybinds, así que no tengo "
+                        "guardado tu valor original.\n\nSi lo apagas, vuelve al valor por defecto de "
+                        "Windows. ¿Continuar?"):
+                    tweak_vars[tid].set(True)
+                    return
             try:
                 tweak_vars[tid].set(tweaks.set(tid, tweak_vars[tid].get()))
             except (TweakError, OSError) as e:
@@ -81,7 +103,7 @@ def main() -> None:
             tweak_vars[t.id] = tk.BooleanVar(value=on)
             ttk.Checkbutton(side, text=f"{t.label}", variable=tweak_vars[t.id],
                             command=lambda i=t.id: on_tweak(i)).pack(anchor="w", pady=(6, 0))
-            ttk.Label(side, text=t.description, wraplength=190).pack(anchor="w", padx=(20, 0))
+            ttk.Label(side, text=t.description, wraplength=215).pack(anchor="w", padx=(20, 0))
 
         def restore_tweaks():
             try:
@@ -90,7 +112,8 @@ def main() -> None:
                 messagebox.showerror("Ajuste de Windows", str(e))
             for t in tweaks.tweaks:
                 tweak_vars[t.id].set(t.is_on())
-        ttk.Button(side, text="Apagar todos", command=restore_tweaks).pack(fill="x", pady=(12, 0))
+        ttk.Button(side, text="Apagar los que activé yo", command=restore_tweaks).pack(
+            fill="x", pady=(0, 4), before=side.winfo_children()[0])
 
     def make_backend():
         if dry.get():
@@ -318,9 +341,9 @@ def main() -> None:
             status.set(f"Guardado en {path}")
 
     bar = ttk.Frame(root)
-    bar.pack(fill="x", padx=8, pady=(0, 4))
+    bar.grid(row=2, column=0, sticky="ew", padx=8, pady=(0, 4))
     bar2 = ttk.Frame(root)      # segunda fila: opciones (si no, no caben en ventanas estrechas)
-    bar2.pack(fill="x", padx=8, pady=(0, 8))
+    bar2.grid(row=3, column=0, sticky="ew", padx=8, pady=(0, 8))
     ttk.Button(bar, text="Abrir…", command=open_file).pack(side="left")
     ttk.Button(bar, text="Iniciar/Parar", command=toggle).pack(side="left", padx=4)
     ttk.Button(bar, text="PARAR TODO", command=stop_all).pack(side="left")
@@ -338,6 +361,7 @@ def main() -> None:
     def toggle_dark():
         dark_var.set(not dark_var.get())
         apply_theme(root, dark_var.get())
+        side_canvas.configure(bg=current_palette().bg)
         theme_btn.config(text=theme_label())
         settings["dark"] = dark_var.get()
         save_settings(settings)
@@ -347,7 +371,7 @@ def main() -> None:
 
     theme_btn = ttk.Button(bar2, text=theme_label(), command=toggle_dark)
     theme_btn.pack(side="right")
-    ttk.Label(root, textvariable=status).pack(fill="x", padx=8, pady=(0, 6))
+    ttk.Label(root, textvariable=status).grid(row=4, column=0, sticky="ew", padx=8, pady=(0, 6))
     def on_close():
         if tweaks is not None and tweaks.api.timer_active:
             tweaks.api.timer_end()    # el temporizador de 1 ms solo vale mientras la app está abierta
