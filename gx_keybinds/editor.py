@@ -6,6 +6,7 @@ from tkinter import messagebox, ttk
 
 from .editor_model import FIELDS, StepEditor, build_step, describe, duration_ms, step_values
 from .model import Macro, MacroError, Step
+from .themes import current_palette
 
 
 class StepDialog(tk.Toplevel):
@@ -96,7 +97,7 @@ class MacroEditor(tk.Toplevel):
         for c, t, w in (("n", "#", 40), ("type", "Tipo", 70), ("desc", "Detalle", 360), ("ms", "ms", 70)):
             self.tree.heading(c, text=t)
             self.tree.column(c, width=w, anchor="w")
-        self.tree.tag_configure("loop", background="#dbeafe")
+        self.tree.tag_configure("loop", background=current_palette().loop_bg)
         sb = ttk.Scrollbar(body, orient="vertical", command=self.tree.yview)
         self.tree.configure(yscrollcommand=sb.set)
         self.tree.pack(side="left", fill="both", expand=True)

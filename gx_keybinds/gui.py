@@ -6,6 +6,8 @@ from tkinter import filedialog, messagebox, simpledialog, ttk
 
 from .backends import DryRunBackend
 from .engine import Manager
+from .settings import load_settings, save_settings
+from .themes import apply_theme, system_prefers_dark
 from .model import Macro, MacroError, load_macros, save_macros
 
 
@@ -19,6 +21,9 @@ def main() -> None:
     except Exception:
         pass
     state: dict = {"mgr": None, "macros": []}
+    settings = load_settings()
+    dark_var = tk.BooleanVar(value=settings.get("dark", system_prefers_dark()))
+    apply_theme(root, dark_var.get())
     dry = tk.BooleanVar(value=True)
 
     profile_var = tk.StringVar()
@@ -199,6 +204,19 @@ def main() -> None:
     moves = tk.BooleanVar(value=False)
     ttk.Checkbutton(bar, text="Grabar movimiento", variable=moves).pack(side="left", padx=8)
     ttk.Checkbutton(bar, text="Simulación (dry-run)", variable=dry).pack(side="right")
+
+    def toggle_dark():
+        dark_var.set(not dark_var.get())
+        apply_theme(root, dark_var.get())
+        theme_btn.config(text=theme_label())
+        settings["dark"] = dark_var.get()
+        save_settings(settings)
+
+    def theme_label():
+        return "☀ Modo claro" if dark_var.get() else "🌙 Modo oscuro"
+
+    theme_btn = ttk.Button(bar, text=theme_label(), command=toggle_dark)
+    theme_btn.pack(side="right", padx=8)
     ttk.Label(root, textvariable=status).pack(fill="x", padx=8, pady=(0, 6))
     def on_close():
         stop_all()

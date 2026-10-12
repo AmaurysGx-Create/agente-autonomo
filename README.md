@@ -72,3 +72,8 @@ Icono: `assets/icon.ico` (exe e instalador) y `gx_keybinds/icon.png` (ventana). 
 Notas: un programa que envía teclas/ratón no puede controlar ventanas ejecutadas como administrador
 salvo que Gx Keybinds también se ejecute como administrador. Los ejecutables de PyInstaller a veces
 los marca el antivirus como falso positivo: añade la carpeta de instalación a las exclusiones si pasa.
+
+## Modo oscuro
+Botón **🌙 Modo oscuro / ☀ Modo claro** en la barra inferior de la GUI. La elección se guarda en
+`%APPDATA%\GxKeybinds\settings.json` (en Linux `~/.config/gx_keybinds/`); la primera vez sigue el
+tema de aplicaciones de Windows.
