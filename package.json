@@ -1,0 +1,20 @@
+{
+  "name": "openfield",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Estudio local de generación de video gratis, accesible desde la red local",
+  "scripts": {
+    "install:all": "npm install && npm install --prefix client",
+    "build": "npm run build --prefix client",
+    "start": "node server/index.js",
+    "dev:server": "node --watch server/index.js",
+    "dev:client": "npm run dev --prefix client",
+    "dev": "npm run dev:server & npm run dev:client"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "multer": "^1.4.5-lts.1"
+  }
+}

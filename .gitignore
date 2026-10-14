@@ -1,0 +1,8 @@
+node_modules
+client/dist
+data/uploads/*
+data/videos/*
+data/jobs.json
+.venv
+__pycache__
+!data/**/.gitkeep

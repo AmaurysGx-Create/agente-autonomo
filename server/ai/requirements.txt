@@ -1,0 +1,8 @@
+torch
+diffusers>=0.32
+transformers
+accelerate
+sentencepiece
+imageio
+imageio-ffmpeg
+protobuf
