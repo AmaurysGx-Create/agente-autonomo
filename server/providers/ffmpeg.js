@@ -82,6 +82,7 @@ function run(args, duration, onProgress, signal) {
 
 const scene = {
   id: 'ffmpeg',
+  kind: 'video',
   name: 'FFmpeg Motion (gratis, sin GPU)',
   description: 'Anima imágenes con cámara virtual o crea escenas animadas desde texto. Rápido y funciona en cualquier PC.',
   modes: ['text', 'image'],

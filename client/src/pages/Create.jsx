@@ -31,6 +31,7 @@ export default function Create({ providers, preset, jobs, refresh }) {
     return () => URL.revokeObjectURL(u);
   }, [file]);
 
+  const vids = jobs.filter((j) => !j.params.kind && (!j.type || j.type === 'video'));
   const prov = providers.find((p) => p.id === provider);
 
   async function submit(e) {
@@ -135,8 +136,8 @@ export default function Create({ providers, preset, jobs, refresh }) {
 
       <section className="results">
         <h2 className="sec">Resultados</h2>
-        {jobs.length === 0 && <p className="empty">Tus videos aparecerán aquí.</p>}
-        <div className="grid">{jobs.slice(0, 6).map((j) => <VideoCard key={j.id} job={j} onReuse={reuse} />)}</div>
+        {vids.length === 0 && <p className="empty">Tus videos aparecerán aquí.</p>}
+        <div className="grid">{vids.slice(0, 6).map((j) => <VideoCard key={j.id} job={j} onReuse={reuse} />)}</div>
       </section>
     </main>
   );

@@ -18,7 +18,9 @@ Desarrollo con recarga: `npm run dev` (cliente en :5173, API en :3000). Otro pue
 
 ## Funciones
 
-- **Crear video**: texto→video e imagen→video (motor FFmpeg o IA local).
+- **Imagen**: texto→imagen con Stable Diffusion local (hasta 4 variaciones, semilla y formato).
+- **Audio**: texto a voz con Piper (11 voces en es/en/pt/fr/de/it), velocidad ajustable.
+- **Video** (Crear): texto→video e imagen→video (motor FFmpeg o IA local).
 - **Cinema Studio**: hasta 12 escenas (texto y/o imagen) unidas con transiciones en un solo video.
 - **Efectos**: sube un video y aplica cámara lenta, acelerado, reversa, B/N, sepia, vintage, viñeta, espejo, glitch o ensueño.
 - **Mis videos**: galería con descarga y borrado.
@@ -28,16 +30,18 @@ Desarrollo con recarga: `npm run dev` (cliente en :5173, API en :3000). Otro pue
 | Motor | Requisitos | Qué hace |
 |---|---|---|
 | **FFmpeg Motion** | Solo FFmpeg | Imagen→video con cámara virtual (zoom/paneo) y texto→video como escena animada con tu prompt. Rápido, sin GPU. |
+| **Stable Diffusion** (imágenes) | Python + `diffusers` (GPU opcional) | Por defecto `stabilityai/sdxl-turbo` (rápido, ~4 pasos, usable en CPU). Cambia el modelo con `SD_MODEL=stable-diffusion-v1-5/stable-diffusion-v1-5`. Revisa la licencia del modelo si lo usarás comercialmente. |
+| **Piper TTS** (audio) | `pip install piper-tts` | Voces neuronales offline. Cada voz se descarga una vez (~60 MB) a `data/voices/`. |
 | **IA local LTX-Video** | GPU NVIDIA (~8 GB VRAM), Python | Video generativo real (texto→video e imagen→video) con el modelo open source `Lightricks/LTX-Video`. |
 
-Activar el motor de IA (opcional):
+Activar los motores de IA (opcional; sin ellos Imagen y Audio aparecen deshabilitados y FFmpeg sigue funcionando):
 
 ```bash
 python3 -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -r server/ai/requirements.txt
 ```
 
-El primer uso descarga el modelo (~10 GB). Si el servidor detecta torch+CUDA, el motor aparece habilitado en "Crear video". Variable `PYTHON` para usar otro intérprete; `FONT_FILE` para otra fuente del texto.
+Los modelos se descargan en el primer uso (SDXL-Turbo ~7 GB, LTX-Video ~10 GB) y necesitan internet esa vez. Si el servidor detecta torch+CUDA, el motor aparece habilitado en "Crear video". Variable `PYTHON` para usar otro intérprete; `FONT_FILE` para otra fuente del texto.
 
 ## Arquitectura
 

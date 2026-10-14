@@ -2,7 +2,9 @@ import React from 'react';
 
 const TABS = [
   ['explore', 'Explorar'],
-  ['create', 'Crear video'],
+  ['image', 'Imagen'],
+  ['create', 'Video'],
+  ['audio', 'Audio'],
   ['cinema', 'Cinema Studio'],
   ['effects', 'Efectos'],
   ['gallery', 'Mis videos'],

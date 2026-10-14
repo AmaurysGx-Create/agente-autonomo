@@ -9,9 +9,11 @@ import { CLIENT_DIST, UPLOAD_DIR, VIDEO_DIR } from './paths.js';
 import { createJob, updateJob, getJob, listJobs, deleteJob } from './jobs.js';
 import { ffmpegProvider, EFFECTS } from './providers/ffmpeg.js';
 import { diffusersProvider } from './providers/diffusers.js';
+import { sdProvider } from './providers/sd.js';
+import { piperProvider, VOICES } from './providers/piper.js';
 
 const PORT = Number(process.env.PORT) || 3000;
-const providers = Object.fromEntries([ffmpegProvider, diffusersProvider].map((p) => [p.id, p]));
+const providers = Object.fromEntries([ffmpegProvider, diffusersProvider, sdProvider, piperProvider].map((p) => [p.id, p]));
 const availability = {};
 const refreshAvailability = async () => {
   for (const p of Object.values(providers)) availability[p.id] = await p.available().catch(() => false);
@@ -40,7 +42,7 @@ app.use('/media/uploads', express.static(UPLOAD_DIR));
 app.get('/api/providers', async (_req, res) => {
   await refreshAvailability();
   res.json(
-    Object.values(providers).map(({ id, name, description, modes }) => ({ id, name, description, modes, available: availability[id] }))
+    Object.values(providers).map(({ id, kind, name, description, modes }) => ({ id, kind, name, description, modes, available: availability[id] }))
   );
 });
 
@@ -51,7 +53,7 @@ app.post('/api/generate', upload.single('image'), (req, res) => {
   const { prompt = '', provider = 'ffmpeg', aspect = '16:9', motion = 'zoom-in' } = req.body;
   const duration = Math.min(30, Math.max(2, Number(req.body.duration) || 5));
   const p = providers[provider];
-  if (!p) return res.status(400).json({ error: 'Proveedor desconocido' });
+  if (!p || p.kind !== 'video') return res.status(400).json({ error: 'Proveedor desconocido' });
   if (!availability[provider]) return res.status(400).json({ error: `${p.name} no está disponible en este equipo` });
   if (req.file && !/^image\//.test(req.file.mimetype)) return res.status(400).json({ error: 'Sube una imagen PNG, JPG o WEBP' });
   if (!req.file && !prompt.trim()) return res.status(400).json({ error: 'Escribe un prompt o sube una imagen' });
@@ -67,6 +69,46 @@ app.post('/api/generate', upload.single('image'), (req, res) => {
       seed: req.body.seed ? Number(req.body.seed) : undefined,
     },
     imageUrl: req.file ? `/media/uploads/${req.file.filename}` : null,
+  });
+  enqueue(job.id);
+  res.status(202).json(job);
+});
+
+const ASPECT_OK = new Set(['16:9', '9:16', '1:1', '4:3']);
+
+app.post('/api/image', (req, res) => {
+  const prompt = String(req.body.prompt || '').trim().slice(0, 500);
+  if (!prompt) return res.status(400).json({ error: 'Escribe un prompt' });
+  if (!availability.sd) return res.status(400).json({ error: 'Stable Diffusion no está instalado (pip install -r server/ai/requirements.txt)' });
+  const aspect = ASPECT_OK.has(req.body.aspect) ? req.body.aspect : '1:1';
+  const count = Math.min(4, Math.max(1, Number(req.body.count) || 1));
+  const baseSeed = req.body.seed !== undefined && req.body.seed !== '' ? Number(req.body.seed) : Math.floor(Math.random() * 2 ** 31);
+  const jobs = Array.from({ length: count }, (_, i) => {
+    const job = createJob({
+      type: 'image',
+      ext: 'png',
+      provider: 'sd',
+      params: { prompt, negative: String(req.body.negative || '').slice(0, 300), aspect, seed: baseSeed + i, duration: 0 },
+    });
+    enqueue(job.id);
+    return job;
+  });
+  res.status(202).json(jobs);
+});
+
+app.get('/api/voices', (_req, res) => res.json(VOICES));
+
+app.post('/api/tts', (req, res) => {
+  const text = String(req.body.text || '').trim().slice(0, 5000);
+  if (!text) return res.status(400).json({ error: 'Escribe el texto a locutar' });
+  if (!VOICES[req.body.voice]) return res.status(400).json({ error: 'Voz desconocida' });
+  if (!availability.piper) return res.status(400).json({ error: 'Piper no está instalado (pip install piper-tts)' });
+  const speed = Math.min(2, Math.max(0.5, Number(req.body.speed) || 1));
+  const job = createJob({
+    type: 'audio',
+    ext: 'wav',
+    provider: 'piper',
+    params: { text, prompt: text.slice(0, 200), voice: req.body.voice, speed, aspect: 'audio', duration: 0 },
   });
   enqueue(job.id);
   res.status(202).json(job);
@@ -141,7 +183,7 @@ async function pump() {
   busy = true;
   const ctrl = new AbortController();
   controllers.set(id, ctrl);
-  const file = `${id}.mp4`;
+  const file = `${id}.${job.ext || 'mp4'}`;
   updateJob(id, { status: 'running', progress: 0.01 });
   try {
     await providers[job.provider].generate(job, {

@@ -6,3 +6,4 @@ sentencepiece
 imageio
 imageio-ffmpeg
 protobuf
+piper-tts

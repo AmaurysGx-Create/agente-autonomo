@@ -10,6 +10,8 @@ const HERO = [
 ];
 
 const TOOLS = [
+  ['🎨', 'Imagen', 'Stable Diffusion local, sin límites', 'image'],
+  ['🎙', 'Audio / Voz', 'Locución con Piper TTS en varios idiomas', 'audio'],
   ['▶', 'Texto → Video', 'Escenas animadas desde un prompt', { mode: 'text' }],
   ['🖼', 'Imagen → Video', 'Zoom, paneo y fundidos cinematográficos', { mode: 'image' }],
   ['🤖', 'IA generativa', 'LTX-Video corriendo en tu GPU', { mode: 'text', provider: 'diffusers' }],
