@@ -3,6 +3,8 @@ import { getJobs, getProviders, deleteJob } from './api.js';
 import Nav from './components/Nav.jsx';
 import Explore from './pages/Explore.jsx';
 import Create from './pages/Create.jsx';
+import Cinema from './pages/Cinema.jsx';
+import Effects from './pages/Effects.jsx';
 import Gallery from './pages/Gallery.jsx';
 
 export default function App() {
@@ -37,6 +39,8 @@ export default function App() {
       <Nav tab={tab} setTab={(t) => go(t)} active={active} count={jobs.length} />
       {tab === 'explore' && <Explore go={go} jobs={jobs} />}
       {tab === 'create' && <Create providers={providers} preset={preset} jobs={jobs} refresh={refresh} />}
+      {tab === 'cinema' && <Cinema jobs={jobs} refresh={refresh} />}
+      {tab === 'effects' && <Effects jobs={jobs} refresh={refresh} />}
       {tab === 'gallery' && (
         <Gallery jobs={jobs} onDelete={(id) => deleteJob(id).then(refresh)} go={go} />
       )}

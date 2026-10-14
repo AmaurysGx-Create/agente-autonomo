@@ -2,6 +2,8 @@
 // escenas animadas a partir de texto usando solo FFmpeg.
 import { spawn } from 'node:child_process';
 import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 
 const FONT_CANDIDATES = [
   process.env.FONT_FILE,
@@ -78,7 +80,7 @@ function run(args, duration, onProgress, signal) {
   });
 }
 
-export const ffmpegProvider = {
+const scene = {
   id: 'ffmpeg',
   name: 'FFmpeg Motion (gratis, sin GPU)',
   description: 'Anima imágenes con cámara virtual o crea escenas animadas desde texto. Rápido y funciona en cualquier PC.',
@@ -136,5 +138,93 @@ export const ffmpegProvider = {
         .join(',');
       await run(['-f', 'lavfi', '-i', src, '-vf', vf, ...common], duration, onProgress, signal);
     }
+  },
+};
+
+// --- Efectos sobre un video subido (equivalente gratuito a "Efectos") ---
+const W_EFFECTS = {
+  slowmo: { vf: 'setpts=2.0*PTS', label: 'Cámara lenta' },
+  fast: { vf: 'setpts=0.5*PTS', label: 'Acelerado' },
+  reverse: { vf: 'reverse', label: 'Reversa' },
+  bw: { vf: 'hue=s=0,eq=contrast=1.15', label: 'Blanco y negro' },
+  sepia: { vf: 'colorchannelmixer=.393:.769:.189:0:.349:.686:.168:0:.272:.534:.131', label: 'Sepia' },
+  vintage: { vf: "curves=vintage,noise=alls=12:allf=t,vignette=PI/4", label: 'Vintage' },
+  vignette: { vf: 'vignette=PI/3.5', label: 'Viñeta' },
+  mirror: { vf: 'hflip', label: 'Espejo' },
+  glitch: { vf: 'rgbashift=rh=-6:bh=6,noise=alls=20:allf=t', label: 'Glitch' },
+  dream: { vf: 'gblur=sigma=2,eq=saturation=1.5:brightness=0.05', label: 'Ensueño' },
+};
+export const EFFECTS = Object.fromEntries(Object.entries(W_EFFECTS).map(([k, v]) => [k, v.label]));
+
+function probeDuration(file) {
+  return new Promise((resolve) => {
+    const p = spawn('ffprobe', ['-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', file]);
+    let out = '';
+    p.stdout.on('data', (d) => (out += d));
+    p.on('error', () => resolve(10));
+    p.on('close', () => resolve(parseFloat(out) || 10));
+  });
+}
+
+async function applyEffect(params, output, onProgress, signal) {
+  const fx = W_EFFECTS[params.effect];
+  if (!fx) throw new Error('Efecto desconocido');
+  if (!params.videoPath) throw new Error('Sube un video');
+  let dur = await probeDuration(params.videoPath);
+  dur = Math.min(dur, 120);
+  if (params.effect === 'slowmo') dur *= 2;
+  if (params.effect === 'fast') dur /= 2;
+  const common = ['-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-preset', 'veryfast', '-crf', '20', '-movflags', '+faststart'];
+  const timing = params.effect === 'slowmo' || params.effect === 'fast' || params.effect === 'reverse';
+  // las alteraciones de tiempo no llevan audio; en el resto se conserva
+  const audio = timing ? ['-an'] : ['-c:a', 'aac', '-map', '0:v:0', '-map', '0:a:0?'];
+  await run(['-t', '120', '-i', params.videoPath, '-vf', `${fx.vf},scale=trunc(iw/2)*2:trunc(ih/2)*2`, ...audio, ...common, output], dur, onProgress, signal);
+}
+
+// --- Cinema Studio: varias escenas unidas con transiciones ---
+async function renderStoryboard(params, output, onProgress, signal) {
+  const scenes = params.scenes || [];
+  if (scenes.length < 1) throw new Error('Añade al menos una escena');
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'openfield-sb-'));
+  const FADE = 0.6;
+  try {
+    const files = [];
+    for (const [i, sc] of scenes.entries()) {
+      const f = path.join(tmp, `s${i}.mp4`);
+      await scene.generate(
+        { params: { ...sc, aspect: params.aspect, motion: sc.motion || ['zoom-in', 'pan-right', 'zoom-out', 'pan-left'][i % 4] } },
+        { output: f, onProgress: (p) => onProgress(((i + p) / (scenes.length + 1)) * 0.95), signal }
+      );
+      files.push(f);
+    }
+    if (files.length === 1) return fs.copyFileSync(files[0], output);
+    let filter = '';
+    let acc = scenes[0].duration;
+    let last = '0:v';
+    for (let i = 1; i < files.length; i++) {
+      const out = i === files.length - 1 ? 'vout' : `v${i}`;
+      filter += `[${last}][${i}:v]xfade=transition=fade:duration=${FADE}:offset=${(acc - FADE * i).toFixed(2)}[${out}];`;
+      acc += scenes[i].duration;
+      last = out;
+    }
+    const total = acc - FADE * (files.length - 1);
+    await run(
+      [...files.flatMap((f) => ['-i', f]), '-filter_complex', filter.slice(0, -1), '-map', '[vout]', '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-preset', 'veryfast', '-crf', '20', '-movflags', '+faststart', output],
+      total,
+      (p) => onProgress(0.95 + p * 0.05),
+      signal
+    );
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+}
+
+export const ffmpegProvider = {
+  ...scene,
+  async generate(job, ctx) {
+    const { kind = 'generate' } = job.params;
+    if (kind === 'effect') return applyEffect(job.params, ctx.output, ctx.onProgress, ctx.signal);
+    if (kind === 'storyboard') return renderStoryboard(job.params, ctx.output, ctx.onProgress, ctx.signal);
+    return scene.generate(job, ctx);
   },
 };

@@ -16,6 +16,13 @@ La consola muestra la URL local y la de red (`http://192.168.x.x:3000`): ábrela
 
 Desarrollo con recarga: `npm run dev` (cliente en :5173, API en :3000). Otro puerto: `PORT=8080 npm start`.
 
+## Funciones
+
+- **Crear video**: texto→video e imagen→video (motor FFmpeg o IA local).
+- **Cinema Studio**: hasta 12 escenas (texto y/o imagen) unidas con transiciones en un solo video.
+- **Efectos**: sube un video y aplica cámara lenta, acelerado, reversa, B/N, sepia, vintage, viñeta, espejo, glitch o ensueño.
+- **Mis videos**: galería con descarga y borrado.
+
 ## Motores de generación
 
 | Motor | Requisitos | Qué hace |

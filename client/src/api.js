@@ -7,3 +7,6 @@ export const getProviders = () => fetch('/api/providers').then(j);
 export const getJobs = () => fetch('/api/jobs').then(j);
 export const deleteJob = (id) => fetch(`/api/jobs/${id}`, { method: 'DELETE' }).then(j);
 export const generate = (form) => fetch('/api/generate', { method: 'POST', body: form }).then(j);
+export const getEffects = () => fetch('/api/effects').then(j);
+export const applyEffect = (form) => fetch('/api/effect', { method: 'POST', body: form }).then(j);
+export const makeStoryboard = (form) => fetch('/api/storyboard', { method: 'POST', body: form }).then(j);

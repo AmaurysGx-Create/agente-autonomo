@@ -18,7 +18,7 @@ export default function VideoCard({ job, onDelete, onReuse }) {
       </div>
       <p className="prompt">{params.prompt || '(imagen animada)'}</p>
       <div className="meta">
-        <span>{params.duration}s · {params.aspect}</span>
+        <span>{params.duration ? `${params.duration}s · ` : ""}{params.aspect === "orig" ? "original" : params.aspect}</span>
         <span className="actions">
           {status === 'done' && <a href={url} download={`video-${job.id.slice(0, 8)}.mp4`}>Descargar</a>}
           {onReuse && <button onClick={() => onReuse(job)}>Repetir</button>}

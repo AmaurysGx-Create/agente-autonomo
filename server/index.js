@@ -7,7 +7,7 @@ import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { CLIENT_DIST, UPLOAD_DIR, VIDEO_DIR } from './paths.js';
 import { createJob, updateJob, getJob, listJobs, deleteJob } from './jobs.js';
-import { ffmpegProvider } from './providers/ffmpeg.js';
+import { ffmpegProvider, EFFECTS } from './providers/ffmpeg.js';
 import { diffusersProvider } from './providers/diffusers.js';
 
 const PORT = Number(process.env.PORT) || 3000;
@@ -27,8 +27,9 @@ const upload = multer({
     filename: (_req, file, cb) => cb(null, randomUUID() + path.extname(file.originalname).toLowerCase().replace(/[^.a-z0-9]/g, '')),
   }),
   limits: { fileSize: 25 * 1024 * 1024 },
-  fileFilter: (_req, file, cb) => cb(null, /^image\/(png|jpe?g|webp)$/.test(file.mimetype)),
+  fileFilter: (_req, file, cb) => cb(null, /^image\/(png|jpe?g|webp)$/.test(file.mimetype) || /^video\/(mp4|webm|quicktime|x-matroska)$/.test(file.mimetype)),
 });
+
 
 const app = express();
 app.use(cors());
@@ -52,6 +53,7 @@ app.post('/api/generate', upload.single('image'), (req, res) => {
   const p = providers[provider];
   if (!p) return res.status(400).json({ error: 'Proveedor desconocido' });
   if (!availability[provider]) return res.status(400).json({ error: `${p.name} no está disponible en este equipo` });
+  if (req.file && !/^image\//.test(req.file.mimetype)) return res.status(400).json({ error: 'Sube una imagen PNG, JPG o WEBP' });
   if (!req.file && !prompt.trim()) return res.status(400).json({ error: 'Escribe un prompt o sube una imagen' });
 
   const job = createJob({
@@ -70,11 +72,51 @@ app.post('/api/generate', upload.single('image'), (req, res) => {
   res.status(202).json(job);
 });
 
+app.get('/api/effects', (_req, res) => res.json(EFFECTS));
+
+app.post('/api/effect', upload.single('video'), (req, res) => {
+  if (!req.file || !/^video\//.test(req.file.mimetype)) return res.status(400).json({ error: 'Sube un archivo de video (mp4, webm, mov)' });
+  if (!EFFECTS[req.body.effect]) return res.status(400).json({ error: 'Efecto desconocido' });
+  const job = createJob({
+    provider: 'ffmpeg',
+    params: { kind: 'effect', effect: req.body.effect, prompt: EFFECTS[req.body.effect], aspect: 'orig', duration: 0, videoPath: req.file.path },
+    uploads: [req.file.path],
+  });
+  enqueue(job.id);
+  res.status(202).json(job);
+});
+
+// Cinema Studio: scenes = JSON [{prompt,duration}], imágenes opcionales en campos scene_0, scene_1…
+app.post('/api/storyboard', upload.any(), (req, res) => {
+  let scenes;
+  try {
+    scenes = JSON.parse(req.body.scenes);
+  } catch {
+    return res.status(400).json({ error: 'Escenas inválidas' });
+  }
+  if (!Array.isArray(scenes) || scenes.length < 1 || scenes.length > 12) return res.status(400).json({ error: 'Entre 1 y 12 escenas' });
+  const byField = Object.fromEntries((req.files || []).map((f) => [f.fieldname, f]));
+  const clean = scenes.map((s, i) => ({
+    prompt: String(s.prompt || '').trim().slice(0, 300),
+    duration: Math.min(10, Math.max(2, Number(s.duration) || 4)),
+    imagePath: /^image\//.test(byField[`scene_${i}`]?.mimetype || '') ? byField[`scene_${i}`].path : undefined,
+  }));
+  if (clean.some((s) => !s.prompt && !s.imagePath)) return res.status(400).json({ error: 'Cada escena necesita texto o imagen' });
+  const job = createJob({
+    provider: 'ffmpeg',
+    params: { kind: 'storyboard', scenes: clean, aspect: req.body.aspect || '16:9', prompt: clean.map((s) => s.prompt).filter(Boolean).join(' → ').slice(0, 200), duration: Math.round(clean.reduce((a, s) => a + s.duration, 0)) },
+    uploads: clean.map((s) => s.imagePath).filter(Boolean),
+  });
+  enqueue(job.id);
+  res.status(202).json(job);
+});
+
 app.delete('/api/jobs/:id', (req, res) => {
   const job = getJob(req.params.id);
   if (!job) return res.sendStatus(404);
   controllers.get(job.id)?.abort();
   if (job.file) fs.rmSync(path.join(VIDEO_DIR, job.file), { force: true });
+  for (const f of job.uploads || []) fs.rmSync(f, { force: true });
   if (job.imageUrl) fs.rmSync(path.join(UPLOAD_DIR, path.basename(job.imageUrl)), { force: true });
   deleteJob(job.id);
   res.sendStatus(204);
